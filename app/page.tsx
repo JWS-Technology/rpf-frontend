@@ -1,3 +1,4 @@
+import DialPad from "./components/DialPad";
 import IssueSelector from "./components/IssueSelector";
 import Navbar from "./components/Navbar";
 
@@ -6,6 +7,7 @@ export default function Home() {
    <div className="bg-white min-h-screen">
     <Navbar />
     <IssueSelector />
+    <DialPad />
    </div>
   );
 }
