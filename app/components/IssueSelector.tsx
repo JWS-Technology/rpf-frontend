@@ -67,7 +67,7 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({ onSelect, initial = null 
       aria-label="Select Type of Issue"
       className="bg-white rounded-lg shadow-sm p-6 max-w-4xl mx-auto"
     >
-      <h2 className=" text-center text-lg font-semibold text-[#0b3b66] mb-4">
+      <h2 className=" text-left text-lg font-semibold text-[#0b3b66] mb-4">
         Select Type of Issue / मुद्दे का प्रकार चुनें
       </h2>
 
