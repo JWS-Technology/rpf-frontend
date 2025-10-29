@@ -29,7 +29,7 @@ const DialPad: React.FC<DialPadProps> = ({ onChange }) => {
   };
 
   return (
-    <section className="bg-white rounded-lg p-6 max-w-4xl mx-auto shadow-2xl border-2 border-blue-100">
+    <section className="bg-white rounded-lg p-6 max-w-4xl mx-2 shadow-2xl border-2 border-blue-100">
       {/* Header */}
       <h2 className="text-left text-lg font-semibold text-[#0b3b66] mb-4 flex items-center gap-2">
         <Phone className="w-5 h-5 text-[#0b3b66]" />
