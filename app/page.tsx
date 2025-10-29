@@ -1,4 +1,5 @@
 import DialPad from "./components/DialPad";
+import EmergencySection from "./components/EmergencySection";
 import IssueSelector from "./components/IssueSelector";
 import Navbar from "./components/Navbar";
 
@@ -8,6 +9,7 @@ export default function Home() {
     <Navbar />
     <IssueSelector />
     <DialPad />
+    <EmergencySection />
    </div>
   );
 }
