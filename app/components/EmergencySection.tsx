@@ -103,7 +103,7 @@ export default function EmergencySection({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-2xl p-6 max-w-4xl mx-auto space-y-6">
+    <div className="bg-white rounded-lg shadow-2xl p-6 max-w-4xl mx-auto space-y-6 border-2 border-blue-100">
       {/* Emergency Banner */}
       <div className="bg-rose-600 text-rose-200 rounded-md p-4 flex items-center justify-center gap-3">
         <div className="flex items-center gap-3 font-semibold text-lg">
