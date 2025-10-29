@@ -1,15 +1,12 @@
 'use client';
 import React from 'react';
 import { Mic, Camera, RotateCw, CheckCircle, OctagonAlert } from 'lucide-react';
+import Image from 'next/image';
 
 type EmergencySectionProps = {
-  /** Called when an audio blob is recorded (or recording stopped) */
   onAudioRecorded?: (blob: Blob | null) => void;
-  /** Called when a photo file is selected */
   onPhotoSelected?: (file: File | null) => void;
-  /** Called when user presses submit; returns collected data (audio blob, photo file) */
   onSubmit?: (data: { audio?: Blob | null; photo?: File | null }) => void;
-  /** Optional: initial disabled state for submit */
   submitDisabled?: boolean;
 };
 
@@ -23,25 +20,73 @@ export default function EmergencySection({
   const [mediaRecorder, setMediaRecorder] = React.useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = React.useState<Blob[]>([]);
   const [audioBlob, setAudioBlob] = React.useState<Blob | null>(null);
+  const [audioURL, setAudioURL] = React.useState<string | null>(null);
 
   const [photoFile, setPhotoFile] = React.useState<File | null>(null);
+  const [photoURL, setPhotoURL] = React.useState<string | null>(null);
 
-  // Start recording using MediaRecorder
+  const pickMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/mpeg',
+    ];
+    for (const m of candidates) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
+    }
+    return '';
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (audioURL) URL.revokeObjectURL(audioURL);
+      if (photoURL) URL.revokeObjectURL(photoURL);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  React.useEffect(() => {
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+      setAudioURL(null);
+    }
+    if (audioBlob) {
+      const u = URL.createObjectURL(audioBlob);
+      setAudioURL(u);
+    }
+    onAudioRecorded?.(audioBlob);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioBlob]);
+
+  React.useEffect(() => {
+    if (photoURL) {
+      URL.revokeObjectURL(photoURL);
+      setPhotoURL(null);
+    }
+    if (photoFile) {
+      const u = URL.createObjectURL(photoFile);
+      setPhotoURL(u);
+    }
+    onPhotoSelected?.(photoFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoFile]);
+
   const startRecording = async () => {
     if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      const mime = pickMimeType();
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       const chunks: Blob[] = [];
       mr.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) chunks.push(ev.data);
       };
       mr.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
         setAudioChunks(chunks);
         setAudioBlob(blob);
-        onAudioRecorded?.(blob);
-        // stop all tracks to release mic
         stream.getTracks().forEach((t) => t.stop());
       };
       mr.start();
@@ -56,7 +101,11 @@ export default function EmergencySection({
 
   const stopRecording = () => {
     if (!mediaRecorder) return;
-    mediaRecorder.stop();
+    try {
+      mediaRecorder.stop();
+    } catch (e) {
+      console.warn('error stopping mediaRecorder', e);
+    }
     setMediaRecorder(null);
     setIsRecording(false);
   };
@@ -69,28 +118,36 @@ export default function EmergencySection({
   const handlePhotoChange = (file?: File) => {
     if (!file) {
       setPhotoFile(null);
-      onPhotoSelected?.(null);
       return;
     }
     setPhotoFile(file);
-    onPhotoSelected?.(file);
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     handlePhotoChange(file ?? undefined);
-    // reset input to allow same file re-select
     e.currentTarget.value = '';
   };
 
   const handleReset = () => {
-    // clear audio and photo
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+      setAudioURL(null);
+    }
+    if (photoURL) {
+      URL.revokeObjectURL(photoURL);
+      setPhotoURL(null);
+    }
     setAudioChunks([]);
     setAudioBlob(null);
     setPhotoFile(null);
     setIsRecording(false);
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
+      try {
+        mediaRecorder.stop();
+      } catch {
+        // ignore
+      }
       setMediaRecorder(null);
     }
     onAudioRecorded?.(null);
@@ -102,13 +159,16 @@ export default function EmergencySection({
     onSubmit?.({ audio: audioBlob ?? undefined, photo: photoFile ?? undefined });
   };
 
+  // Only show preview container if there is audio or photo
+  const showPreview = Boolean(audioURL || photoURL);
+
   return (
     <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
       {/* Emergency Banner */}
-      <div className="bg-rose-600 text-rose-200 rounded-md p-4 flex items-center justify-center gap-3">
-        <div className="flex items-center gap-3 font-semibold text-lg">
+      <div className="bg-rose-600 text-rose-200 rounded-md py-4">
+        <div className="flex items-center justify-center gap-3 sm:gap-10 font-semibold">
           <OctagonAlert size={40} />
-          <span className="uppercase text-xl">EMERGENCY / आपातकालीन</span>
+          <span className="uppercase text-md sm:text-xl">EMERGENCY / आपातकालीन</span>
           <OctagonAlert size={40} />
         </div>
       </div>
@@ -164,6 +224,36 @@ export default function EmergencySection({
         </label>
       </div>
 
+      {/* Conditionally-rendered Preview area: appears only when there is content */}
+      {showPreview && (
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Audio preview (only if present) */}
+          {audioURL && (
+            <div className="p-3 border rounded-md flex-1">
+              <div className="font-medium mb-2">Audio Preview</div>
+              <div className="space-y-2">
+                <audio key={audioURL} controls playsInline src={audioURL} className="w-full" />
+                <div className="flex items-center gap-3 text-sm">
+                  <a href={audioURL} download={`recording-${Date.now()}.webm`} className="underline">
+                    Download audio
+                  </a>
+                  <span className="text-gray-500">{audioBlob ? `${Math.round((audioBlob.size / 1024))} KB` : ''}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Photo preview (only if present) */}
+          {photoURL && (
+            <div className="p-3 border rounded-md flex-1">
+              <div className="font-medium mb-2">Photo Preview</div>
+              {/* <img src={photoURL} alt="Preview" className="max-h-64 w-full object-contain rounded-md" /> */}
+              <Image height={100} width={100} src={photoURL} alt='Preview' className="max-h-64 w-full object-contain rounded-md"  />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Footer Actions (Reset / Submit) */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <button
@@ -188,18 +278,6 @@ export default function EmergencySection({
           <CheckCircle className="w-5 h-5" />
           <span className="font-semibold">SUBMIT COMPLAINT / शिकायत दर्ज करें</span>
         </button>
-      </div>
-
-      {/* Optional preview area */}
-      <div className="text-sm text-gray-600">
-        {audioBlob ? (
-          <div className="flex items-center gap-3">
-            <audio controls src={URL.createObjectURL(audioBlob)} />
-            <div className="text-xs">Recorded audio ready</div>
-          </div>
-        ) : (
-          <div className="text-xs">No recording</div>
-        )}
       </div>
     </div>
   );
