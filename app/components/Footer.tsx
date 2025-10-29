@@ -4,7 +4,7 @@ import { Info } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="w-full bg-[#002b5c] text-white py-8 mt-8">
+    <footer className="w-full bg-[#002b5c] text-white py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Info Row */}
