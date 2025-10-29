@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Mic, Camera, RotateCw, CheckCircle } from 'lucide-react';
+import { Mic, Camera, RotateCw, CheckCircle, OctagonAlert } from 'lucide-react';
 
 type EmergencySectionProps = {
   /** Called when an audio blob is recorded (or recording stopped) */
@@ -103,17 +103,13 @@ export default function EmergencySection({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 max-w-4xl mx-auto space-y-6">
+    <div className="bg-white rounded-lg shadow-2xl p-6 max-w-4xl mx-auto space-y-6">
       {/* Emergency Banner */}
       <div className="bg-rose-600 text-rose-200 rounded-md p-4 flex items-center justify-center gap-3">
         <div className="flex items-center gap-3 font-semibold text-lg">
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 2 L20 7 L12 22 L4 7 Z" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-          <span className="uppercase">EMERGENCY / आपातकालीन</span>
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 2 L20 7 L12 22 L4 7 Z" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
+          <OctagonAlert size={40} />
+          <span className="uppercase text-xl">EMERGENCY / आपातकालीन</span>
+          <OctagonAlert size={40} />
         </div>
       </div>
 
