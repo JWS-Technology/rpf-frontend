@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from "next/server";
+import Twilio from "twilio";
+
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData();
+    const issue_type = formData.get("issue_type");
+    const phone_number = formData.get("phone_number");
+    const station = formData.get("station");
+
+    const formattedBody = `
+    New Incident Report Submitted:
+
+    Issue: ${issue_type}
+    Phone Number: ${phone_number}
+    Location/Station: ${station}
+
+    Please take immediate action.
+    `;
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const client = Twilio(accountSid, authToken);
+
+    const message = await client.messages.create({
+      from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      body: formattedBody,
+      // body: "Hello! This is noel sebu.",
+      to: `${process.env.TO_WHATSAPP_NUMBER}`,
+    });
+    console.log("✅ Message SID:", message.sid);
+
+    return NextResponse.json(
+      { message: "message successfully sent", success: true },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("❌ Error sending message:", error);
+    return NextResponse.json(
+      { message: "some error in sos backend", success: false },
+      { status: 400 }
+    );
+  }
+}
