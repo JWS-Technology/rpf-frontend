@@ -37,7 +37,7 @@ export interface IssueSelectorProps {
 const OPTIONS: Option[] = [
   { issue: 'theft', icon: Lock, title: 'Theft', subtitle: 'चोरी' },
   { issue: 'harassment', icon: UserX, title: 'Harassment', subtitle: 'उत्पीड़न' },
-  { issue: 'suspicious', icon: AlertTriangle, title: 'Suspicious Activity', subtitle: 'संदिग्ध गतिविधि' },
+  { issue: 'suspicious activity', icon: AlertTriangle, title: 'Suspicious Activity', subtitle: 'संदिग्ध गतिविधि' },
   { issue: 'lost', icon: Box, title: 'Lost Item', subtitle: 'खोई वस्तु' },
   { issue: 'security', icon: ShieldOff, title: 'Security Threat', subtitle: 'सुरक्षा खतरा' },
   { issue: 'other', icon: HelpCircle, title: 'Other', subtitle: 'अन्य' },
