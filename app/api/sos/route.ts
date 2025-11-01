@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     New Incident Report Submitted:
 
     Issue: ${issue_type}
-    Phone Number: ${phone_number}
+    Call now: ${phone_number}
     Location/Station: ${station}
 
     Please take immediate action.
