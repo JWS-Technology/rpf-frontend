@@ -2,11 +2,15 @@ import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
 export interface sosData {
-  phone_number: string
+  phone_number: string,
+  issue_type: string,
+  station: string,
 }
 
 const initialState: sosData = {
   phone_number: "",
+  issue_type: "",
+  station: "",
 }
 
 export const sosSlice = createSlice({
