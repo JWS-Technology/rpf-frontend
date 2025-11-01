@@ -17,12 +17,22 @@ export const sosSlice = createSlice({
   name: 'sos',
   initialState,
   reducers: {
-    clearPhoneNumber: (state) => {
-      state.phone_number = ""
-    },
     setPhoneNumber: (state, action: PayloadAction<string>) => {
       state.phone_number = action.payload;
     },
+    setStation: (state, action: PayloadAction<string>) => {
+      state.station =  action.payload;
+    },
+    setIssueType: (state, action: PayloadAction<string>) => {
+      state.issue_type = action.payload;
+    },
+    clearPhoneNumber: (state) => {
+      state.phone_number = ""
+    },
+    clearAllData: (state) => {
+      state.phone_number = "";
+      state.issue_type = "",
+    }
   },
 })
 
