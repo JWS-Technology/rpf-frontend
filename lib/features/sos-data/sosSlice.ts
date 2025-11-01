@@ -10,7 +10,7 @@ export interface sosData {
 const initialState: sosData = {
   phone_number: "",
   issue_type: "",
-  station: "",
+  station: "Srirangam",
 };
 
 export const sosSlice = createSlice({
