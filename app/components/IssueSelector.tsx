@@ -68,7 +68,7 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({ onSelect, initial = null 
       className="bg-white rounded-lg p-6 w-full max-w-4xl shadow-2xl border-2 border-blue-100"
     >
       <h2 className=" text-left text-lg font-semibold text-[#0b3b66] mb-4">
-        Select Type of Issue / मुद्दे का प्रकार चुनें
+        Select The Assistance Required / आवश्यक सहायता चुनें
       </h2>
 
       <div className=" grid grid-cols-1 sm:grid-cols-2 gap-4">
