@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { TrainFront } from 'lucide-react';
 
 export default function Navbar({
-  title = 'RPF TOUCH SCREEN TAB',
+  title = 'RPF ASSISTANCE MANAGEMENT SYSTEM',
   subtitle = 'Passenger Safety Complaint System',
 }) {
   return (

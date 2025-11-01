@@ -163,15 +163,24 @@ export default function EmergencySection({
   const showPreview = Boolean(audioURL || photoURL);
 
   return (
-    <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
-      {/* Emergency Banner */}
-      <div className="bg-rose-600 text-rose-200 rounded-md py-4">
-        <div className="flex items-center justify-center gap-3 sm:gap-10 font-semibold">
-          <OctagonAlert size={40} />
-          <span className="uppercase text-md sm:text-xl">EMERGENCY / आपातकालीन</span>
-          <OctagonAlert size={40} />
-        </div>
+   <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
+  {/* Emergency Banner */}
+  <div className="bg-rose-600 text-rose-200 rounded-md py-4">
+    <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
+      <div className="flex items-center justify-center gap-3 sm:gap-10">
+        <OctagonAlert size={40} />
+        <span className="uppercase text-md sm:text-xl">EMERGENCY</span>
+        <OctagonAlert size={40} />
       </div>
+
+      {/* 🩸 Subtext / Description */}
+      <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
+        In case of emergency, record audio.
+        <br />
+        आपात स्थिति में ऑडियो रिकॉर्ड करें।
+      </p>
+    </div>
+  </div>
 
       {/* Actions Row (Record / Upload) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
