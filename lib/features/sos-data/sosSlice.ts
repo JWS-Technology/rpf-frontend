@@ -24,7 +24,9 @@ export const sosSlice = createSlice({
       state.station = action.payload;
     },
     setIssueType: (state, action: PayloadAction<string>) => {
-      state.issue_type = action.payload;
+      
+      state.issue_type = (action.payload === state.issue_type) ? "" : action.payload;
+      // state.issue_type = action.payload;
     },
     clearPhoneNumber: (state) => {
       state.phone_number = "";
