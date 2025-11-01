@@ -2,6 +2,9 @@
 import React from 'react';
 import { Mic, Camera, RotateCw, CheckCircle, OctagonAlert } from 'lucide-react';
 import Image from 'next/image';
+import { useDispatch } from 'react-redux';
+import { clearAllData } from '@/lib/features/sos-data/sosSlice';
+
 
 type EmergencySectionProps = {
   onAudioRecorded?: (blob: Blob | null) => void;
@@ -16,6 +19,9 @@ export default function EmergencySection({
   onSubmit,
   submitDisabled = false,
 }: EmergencySectionProps) {
+
+  const dispatch = useDispatch();
+
   const [isRecording, setIsRecording] = React.useState(false);
   const [mediaRecorder, setMediaRecorder] = React.useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = React.useState<Blob[]>([]);
@@ -130,6 +136,7 @@ export default function EmergencySection({
   };
 
   const handleReset = () => {
+    dispatch(clearAllData());
     if (audioURL) {
       URL.revokeObjectURL(audioURL);
       setAudioURL(null);
@@ -163,24 +170,24 @@ export default function EmergencySection({
   const showPreview = Boolean(audioURL || photoURL);
 
   return (
-   <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
-  {/* Emergency Banner */}
-  <div className="bg-rose-600 text-rose-200 rounded-md py-4">
-    <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
-      <div className="flex items-center justify-center gap-3 sm:gap-10">
-        <OctagonAlert size={40} />
-        <span className="uppercase text-md sm:text-xl">EMERGENCY</span>
-        <OctagonAlert size={40} />
-      </div>
+    <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
+      {/* Emergency Banner */}
+      <div className="bg-rose-600 text-rose-200 rounded-md py-4">
+        <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
+          <div className="flex items-center justify-center gap-3 sm:gap-10">
+            <OctagonAlert size={40} />
+            <span className="uppercase text-md sm:text-xl">EMERGENCY</span>
+            <OctagonAlert size={40} />
+          </div>
 
-      {/* 🩸 Subtext / Description */}
-      <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
-        In case of emergency, record audio.
-        <br />
-        आपात स्थिति में ऑडियो रिकॉर्ड करें।
-      </p>
-    </div>
-  </div>
+          {/* 🩸 Subtext / Description */}
+          <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
+            In case of emergency, record audio.
+            <br />
+            आपात स्थिति में ऑडियो रिकॉर्ड करें।
+          </p>
+        </div>
+      </div>
 
       {/* Actions Row (Record / Upload) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -191,9 +198,8 @@ export default function EmergencySection({
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') handleRecordToggle();
           }}
-          className={`flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none ${
-            isRecording ? 'bg-[#234b74] text-white' : 'bg-white text-[#0b3b66]'
-          }`}
+          className={`flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none ${isRecording ? 'bg-[#234b74] text-white' : 'bg-white text-[#0b3b66]'
+            }`}
           onClick={handleRecordToggle}
           aria-pressed={isRecording}
           aria-label={isRecording ? 'Stop recording' : 'Record audio'}
@@ -257,7 +263,7 @@ export default function EmergencySection({
             <div className="p-3 border rounded-md flex-1">
               <div className="font-medium mb-2">Photo Preview</div>
               {/* <img src={photoURL} alt="Preview" className="max-h-64 w-full object-contain rounded-md" /> */}
-              <Image height={100} width={100} src={photoURL} alt='Preview' className="max-h-64 w-full object-contain rounded-md"  />
+              <Image height={100} width={100} src={photoURL} alt='Preview' className="max-h-64 w-full object-contain rounded-md" />
             </div>
           )}
         </div>
@@ -279,9 +285,8 @@ export default function EmergencySection({
           type="button"
           onClick={handleSubmit}
           disabled={submitDisabled}
-          className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-white ${
-            submitDisabled ? 'bg-green-300 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-white ${submitDisabled ? 'bg-green-300 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'
+            }`}
           aria-label="Submit Complaint / शिकायत दर्ज करें"
         >
           <CheckCircle className="w-5 h-5" />
