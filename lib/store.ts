@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit'
-import counterReducer from './features/sos-data/sosSlice'
+import sosReducer from './features/sos-data/sosSlice'
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
-      counter: counterReducer
+      sos: sosReducer
     },
   })
 }
