@@ -159,6 +159,7 @@ export default function EmergencySection({
     }
     onAudioRecorded?.(null);
     onPhotoSelected?.(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = () => {
