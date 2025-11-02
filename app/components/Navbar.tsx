@@ -16,11 +16,11 @@ export default function Navbar({
           {/* Left logo / Indian Railways */}
           <div className="flex items-center space-x-3 ">
             <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-              <TrainFront className="w-6 h-6 text-white" />
+              <TrainFront size={35} className="text-white" />
             </div>
             <div className="hidden sm:block">
-              <div className="text-sm font-semibold">INDIAN RAILWAYS</div>
-              <div className="text-[11px] text-white/80">भारतीय रेल</div>
+              <div className="text-lg font-semibold">INDIAN RAILWAYS</div>
+              <div className="text-md text-white/80">भारतीय रेल</div>
             </div>
           </div>
 
@@ -33,8 +33,8 @@ export default function Navbar({
           {/* Right logo / RPF image */}
           <div className="flex items-center justify-end space-x-3">
             <div className="hidden sm:block text-right">
-              <div className="text-sm font-semibold">RPF</div>
-              <div className="text-[11px] text-white/80">रेलवे सुरक्षा बल</div>
+              <div className="text-lg font-semibold">RPF</div>
+              <div className="text-md text-white/80">रेलवे सुरक्षा बल</div>
             </div>
             <div className="bg-white p-1 rounded-md flex items-center justify-center">
               <Image

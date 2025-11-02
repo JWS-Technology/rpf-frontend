@@ -1,31 +1,42 @@
 'use client';
 import React from 'react';
 import { Phone, Delete } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/lib/store';
+import { setPhoneNumber } from '@/lib/features/sos-data/sosSlice';
 
 interface DialPadProps {
   onChange?: (value: string) => void;
 }
 
 const DialPad: React.FC<DialPadProps> = ({ onChange }) => {
-  const [value, setValue] = React.useState<string>('');
+
+  const phoneNumber = useSelector((state: RootState) => state.sos.phone_number);
+  console.log(phoneNumber.slice(0, -1));
+
+  const dispatch = useDispatch();
+  // const [value, setValue] = React.useState<string>('');
 
   const handlePress = (num: string) => {
-    if (value.length < 10) {
-      const newValue = value + num;
-      setValue(newValue);
-      onChange?.(newValue);
+    if (phoneNumber.length < 10) {
+      const newValue = phoneNumber + num;
+      // setValue(newValue);
+      // onChange?.(newValue);
+      dispatch(setPhoneNumber(newValue));
     }
   };
 
   const handleDelete = () => {
-    const newValue = value.slice(0, -1);
-    setValue(newValue);
-    onChange?.(newValue);
+    const newValue = phoneNumber.slice(0, -1);
+    // setValue(newValue);
+    // onChange?.(newValue);
+    dispatch(setPhoneNumber(newValue));
   };
 
   const handleClear = () => {
-    setValue('');
-    onChange?.('');
+    // setValue('');
+    // onChange?.('');
+    dispatch(setPhoneNumber(""));
   };
 
   return (
@@ -38,8 +49,8 @@ const DialPad: React.FC<DialPadProps> = ({ onChange }) => {
 
       {/* Display box */}
       <div className="border-2 border-[#234b74] rounded-lg p-3 mb-4 flex justify-between items-center text-lg text-[#0b3b66] font-semibold">
-        <div>{value || <span className="text-gray-400">_</span>}</div>
-        <div className="text-sm text-gray-500">{value.length}/10</div>
+        <div>{phoneNumber || <span className="text-gray-400">_</span>}</div>
+        <div className="text-sm text-gray-500">{phoneNumber.length}/10</div>
       </div>
 
       {/* Number buttons */}

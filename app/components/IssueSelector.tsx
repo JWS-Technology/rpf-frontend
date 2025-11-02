@@ -8,6 +8,9 @@ import {
   ShieldOff,
   HelpCircle,
 } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setIssueType } from '@/lib/features/sos-data/sosSlice';
+import { RootState } from '@/lib/store';
 
 /**
  * Type definitions
@@ -15,7 +18,7 @@ import {
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
 type Option = {
-  key: string;
+  issue: string;
   icon: IconComponent;
   title: string;
   subtitle: string;
@@ -32,33 +35,41 @@ export interface IssueSelectorProps {
  * Options list
  */
 const OPTIONS: Option[] = [
-  { key: 'theft', icon: Lock, title: 'Theft', subtitle: 'चोरी' },
-  { key: 'harassment', icon: UserX, title: 'Harassment', subtitle: 'उत्पीड़न' },
-  { key: 'suspicious', icon: AlertTriangle, title: 'Suspicious Activity', subtitle: 'संदिग्ध गतिविधि' },
-  { key: 'lost', icon: Box, title: 'Lost Item', subtitle: 'खोई वस्तु' },
-  { key: 'security', icon: ShieldOff, title: 'Security Threat', subtitle: 'सुरक्षा खतरा' },
-  { key: 'other', icon: HelpCircle, title: 'Other', subtitle: 'अन्य' },
+  { issue: 'theft', icon: Lock, title: 'Theft', subtitle: 'चोरी' },
+  { issue: 'harassment', icon: UserX, title: 'Harassment', subtitle: 'उत्पीड़न' },
+  { issue: 'suspicious activity', icon: AlertTriangle, title: 'Suspicious Activity', subtitle: 'संदिग्ध गतिविधि' },
+  { issue: 'lost', icon: Box, title: 'Lost Item', subtitle: 'खोई वस्तु' },
+  { issue: 'security', icon: ShieldOff, title: 'Security Threat', subtitle: 'सुरक्षा खतरा' },
+  { issue: 'other', icon: HelpCircle, title: 'Other', subtitle: 'अन्य' },
 ];
 
 /**
  * Component
  */
-const IssueSelector: React.FC<IssueSelectorProps> = ({ onSelect, initial = null }) => {
-  const [selected, setSelected] = React.useState<string | null>(initial);
+const IssueSelector: React.FC<IssueSelectorProps> = () => {
+
+  const dispatch = useDispatch();
+
+  const issueType = useSelector((state: RootState) => state.sos.issue_type);
+  // const [selected, setSelected] = React.useState<string | null>();
+
+  // React.useEffect(() => {
+  //   setSelected(null);
+  // }, []);
 
   React.useEffect(() => {
-    setSelected(initial);
-  }, [initial]);
+    console.log(issueType)
+  }, [issueType]);
 
-  const handleSelect = (key: string) => {
-    setSelected(key);
-    if (typeof onSelect === 'function') onSelect(key);
-  };
+  // const handleSelect = (issue: string) => {
+  //   setSelected(issue);
+  // };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, key: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, issue: string) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleSelect(key);
+      // handleSelect(issue);
+      console.log(issue);
     }
   };
 
@@ -72,18 +83,19 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({ onSelect, initial = null 
       </h2>
 
       <div className=" grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {OPTIONS.map(({ key, icon: Icon, title, subtitle }) => {
-          const isActive = selected === key;
+        {OPTIONS.map(({ issue, icon: Icon, title, subtitle }) => {
+          const isActive = issueType === issue;
           return (
             <button
-              key={key}
+              key={issue}
               type="button"
-              onClick={() => handleSelect(key)}
-              onKeyDown={(e) => handleKeyDown(e, key)}
+              onClick={() => dispatch(setIssueType(issue))}
+              // onClick={() => handleSelect(issue)}
+              onKeyDown={(e) => handleKeyDown(e, issue)}
               aria-pressed={isActive}
               aria-label={`${title} / ${subtitle}`}
               className={[
-                'outline-none flex items-center gap-4 p-5 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 transition',
+                'outline-none flex items-center gap-4 p-5 rounded-lg border-2 transition',
                 isActive
                   ? 'bg-[#234b74] border-[#234b74] text-white shadow-inner'
                   : 'bg-white border-[#234b74] text-[#0b3b66] hover:bg-[#f4f7fb]',
