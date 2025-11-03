@@ -31,9 +31,6 @@ export interface IssueSelectorProps {
   initial?: string | null;
 }
 
-/**
- * Options list
- */
 const OPTIONS: Option[] = [
   { issue: 'theft', icon: Lock, title: 'Theft', subtitle: 'चोरी' },
   { issue: 'harassment', icon: UserX, title: 'Harassment', subtitle: 'उत्पीड़न' },
@@ -43,27 +40,26 @@ const OPTIONS: Option[] = [
   { issue: 'other', icon: HelpCircle, title: 'Other', subtitle: 'अन्य' },
 ];
 
-/**
- * Component
- */
+
 const IssueSelector: React.FC<IssueSelectorProps> = () => {
 
   const dispatch = useDispatch();
 
   const issueType = useSelector((state: RootState) => state.sos.issue_type);
-  // const [selected, setSelected] = React.useState<string | null>();
 
-  // React.useEffect(() => {
-  //   setSelected(null);
-  // }, []);
 
   React.useEffect(() => {
     console.log(issueType)
   }, [issueType]);
 
-  // const handleSelect = (issue: string) => {
-  //   setSelected(issue);
-  // };
+  const handleSelect = (issue: string) => {
+    dispatch(setIssueType(issue));
+    document.querySelector(".dialpad")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, issue: string) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -89,8 +85,7 @@ const IssueSelector: React.FC<IssueSelectorProps> = () => {
             <button
               key={issue}
               type="button"
-              onClick={() => dispatch(setIssueType(issue))}
-              // onClick={() => handleSelect(issue)}
+              onClick={() => handleSelect(issue)}
               onKeyDown={(e) => handleKeyDown(e, issue)}
               aria-pressed={isActive}
               aria-label={`${title} / ${subtitle}`}
