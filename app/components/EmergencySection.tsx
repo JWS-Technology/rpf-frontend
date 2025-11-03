@@ -47,11 +47,10 @@ export default function EmergencySection({
       formData.append("issue_type", issue_type);
       formData.append("phone_number", phone_number);
       formData.append("station", station);
-      setTimeout(() => {
-        setisLoading(false);
-      }, 3000);
-      // const res = await axios.post("/api/sos", formData);
+
+      const res = await axios.post("/api/sos", formData);
       // console.log(res);
+      setisLoading(false);
     } catch (error) {
       setisLoading(false);
 
@@ -354,8 +353,8 @@ export default function EmergencySection({
           onClick={reqHelp}
           disabled={submitDisabled}
           className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-white ${submitDisabled
-              ? "bg-green-300 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-600"
+            ? "bg-green-300 cursor-not-allowed"
+            : "bg-emerald-500 hover:bg-emerald-600"
             }`}
           aria-label="Submit Complaint / शिकायत दर्ज करें"
         >
