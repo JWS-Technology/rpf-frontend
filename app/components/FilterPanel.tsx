@@ -65,7 +65,7 @@ export default function FilterPanel() {
   );
 
   return (
-    <aside className="w-full lg:w-72 bg-white border border-gray-200 rounded-2xl shadow-sm p-5 text-[#0b2c64]">
+    <aside className="w-full lg:w-87 bg-white border border-gray-200 rounded-2xl shadow-sm p-5 text-[#0b2c64]">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <Filter className="w-5 h-5 text-[#0b2c64]" />

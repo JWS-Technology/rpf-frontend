@@ -11,6 +11,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function TopBar() {
   const [station, setStation] = useState("All Stations");
@@ -39,13 +40,22 @@ export default function TopBar() {
   }, []);
 
   return (
-    <header className="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+    <header className="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 py-3">
+
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
-        {/* LEFT — Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="bg-[#0b2c64] text-white font-bold text-lg px-3 py-1 rounded-md">
-            RPF
-          </div>
+         {/* LEFT — Logo + Title */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* 🔹 Logo Image */}
+          <Image
+            src="/rpf_logo.png"  // Make sure this file is inside your /public folder
+            alt="RPF Logo"
+            width={52}
+            height={52}
+            className="object-contain rounded-md"
+            priority
+          />
+
+          {/* 🔹 Text beside Logo */}
           <div className="hidden sm:block">
             <h1 className="font-semibold text-[#0b2c64] text-base sm:text-lg">
               RPF Operations Portal
@@ -111,7 +121,7 @@ export default function TopBar() {
         </div>
 
         {/* RIGHT — Icons + Burger */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="relative">
             <Bell className="text-gray-600 w-5 h-5 cursor-pointer" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
