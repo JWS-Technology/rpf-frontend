@@ -9,7 +9,7 @@ interface DialPadProps {
   onChange?: (value: string) => void;
 }
 
-const DialPad: React.FC<DialPadProps> = ({ onChange }) => {
+const DialPad: React.FC<DialPadProps> = () => {
 
   const phoneNumber = useSelector((state: RootState) => state.sos.phone_number);
   console.log(phoneNumber.slice(0, -1));
