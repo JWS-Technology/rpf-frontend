@@ -22,5 +22,5 @@ const incidentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.incidents ||
-  mongoose.model("incidents", incidentSchema);
+export default mongoose.models.Incident ||
+  mongoose.model("Incident", incidentSchema);
