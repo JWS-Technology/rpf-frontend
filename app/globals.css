@@ -1,10 +1,114 @@
 @import "tailwindcss";
 
+/* --- FORCE LIGHT MODE --- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc; /* soft grayish white */
+  --foreground: #0b2c64; /* deep navy text */
+  --card-bg: #ffffff; /* white cards */
+  --card-border: #e2e8f0; /* light border */
+  --primary: #0b2c64; /* dark navy */
+  --secondary: #e8effc; /* light blue background */
+  --accent: #e11d48; /* red for SLA breach */
+  --success: #16a34a; /* green for resolved */
+  --warning: #fbbf24; /* yellow for attention */
 }
 
+/* REMOVE DARK MODE ENTIRELY */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #f8fafc;
+    --foreground: #0b2c64;
+  }
+}
+
+/* --- BODY STYLING --- */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- CARD DESIGN --- */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+  padding: 1.25rem;
+}
+
+/* --- BUTTON STYLES --- */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #092659;
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--primary);
+}
+
+.btn-secondary:hover {
+  background-color: #dbe6fb;
+}
+
+.btn-danger {
+  background-color: var(--accent);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #be123c;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #15803d;
+}
+
+/* --- LABELS & BADGES --- */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.badge-high {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+.badge-inprogress {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-sla {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* --- SCROLLBAR HIDDEN --- */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- ANIMATIONS --- */
 @keyframes blink {
   0%, 100% {
     opacity: 1;
@@ -13,40 +117,6 @@
     opacity: 0.2;
   }
 }
-
 .animate-blink {
   animation: blink 1s infinite;
-}
-
-
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-::-webkit-scrollbar {
-  display: none;
 }

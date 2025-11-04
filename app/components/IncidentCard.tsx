@@ -1,4 +1,7 @@
+"use client";
+
 import { MapPin, Clock, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface IncidentProps {
   incident: {
@@ -14,6 +17,8 @@ interface IncidentProps {
 }
 
 export default function IncidentCard({ incident }: IncidentProps) {
+  const router = useRouter();
+
   const statusStyles: Record<string, string> = {
     OPEN: "bg-[#fef2f2] text-[#c53030]",
     ASSIGNED: "bg-[#e3e9f9] text-[#0b2c64]",
@@ -25,7 +30,6 @@ export default function IncidentCard({ incident }: IncidentProps) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 w-full flex flex-col">
-      {/* Header Row */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-base sm:text-lg font-semibold text-[#0b2c64]">
@@ -37,7 +41,6 @@ export default function IncidentCard({ incident }: IncidentProps) {
             </span>
           )}
         </div>
-
         <div
           className={`text-xs font-medium px-3 py-1 rounded-full ${statusStyles[incident.status]}`}
         >
@@ -45,7 +48,6 @@ export default function IncidentCard({ incident }: IncidentProps) {
         </div>
       </div>
 
-      {/* Grid Info Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mb-3">
         <div>
           <p className="text-[15px] text-[#0b2c64] font-semibold">
@@ -74,11 +76,13 @@ export default function IncidentCard({ incident }: IncidentProps) {
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 mt-auto pt-3">
-        <button className="bg-[#e8effc] text-[#0b2c64] py-2 rounded-xl font-medium text-sm hover:bg-[#dbe6fb] transition">
-          View Details
-        </button>
+        <button
+  onClick={() => router.push(`/incidents/${incident.id}`)}
+  className="bg-[#e8effc] text-[#0b2c64] py-2 rounded-xl font-medium text-sm hover:bg-[#dbe6fb] transition"
+>
+  View Details
+</button>
         {(incident.status === "OPEN" || incident.status === "ACKNOWLEDGED") && (
           <button className="bg-[#0b2c64] text-white py-2 rounded-xl font-medium text-sm hover:bg-[#092659] transition">
             Assign

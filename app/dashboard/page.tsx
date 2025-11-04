@@ -14,24 +14,26 @@ export default function IncidentsPage() {
     <div className="bg-[#f5f8fa] min-h-screen overflow-x-hidden">
       <TopBar />
 
-      {/* Header Section */}
+      {/* ===== Header Section ===== */}
       <div className="flex flex-wrap items-center justify-between px-4 sm:px-6 md:px-10 py-6 border-b border-gray-200 bg-[#f5f8fa]">
+        {/* Title + Count */}
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl font-bold text-[#0b2c64]">All Incidents</h1>
           <p className="text-sm text-[#4a5a73] mt-1">
-            Showing {incidentCount} {incidentCount === 1 ? "incident" : "incidents"}
+            Showing {incidentCount}{" "}
+            {incidentCount === 1 ? "incident" : "incidents"}
           </p>
         </div>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          {/* Dummy Export UI */}
+          {/* Export Button */}
           <button className="flex items-center gap-2 bg-white border border-gray-200 text-[#0b2c64] font-medium px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50 transition">
             <Download size={18} />
             Export
           </button>
 
-          {/* Grid View */}
+          {/* Grid View Toggle */}
           <button
             onClick={() => setView("grid")}
             className={`p-3 rounded-xl shadow-md transition ${
@@ -43,7 +45,7 @@ export default function IncidentsPage() {
             <LayoutGrid size={18} />
           </button>
 
-          {/* List View */}
+          {/* List View Toggle */}
           <button
             onClick={() => setView("list")}
             className={`p-3 rounded-xl shadow-md transition ${
@@ -57,16 +59,30 @@ export default function IncidentsPage() {
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="px-4 sm:px-6 md:px-10 py-6 flex flex-col lg:flex-row gap-6">
-        {/* Filter Panel */}
-        <div className="w-full lg:w-1/4">
+      {/* ===== Main Content ===== */}
+      <div
+        className="
+          px-4 sm:px-6 md:px-10 py-6 
+          flex flex-col lg:flex-row gap-6 
+          max-w-[1600px] mx-auto
+        "
+      >
+        {/* ===== Filter Sidebar ===== */}
+        <div
+          className="
+            w-full md:w-[65%] lg:w-88 
+            shrink-0 transition-all duration-300
+          "
+        >
           <FilterPanel />
         </div>
 
-        {/* Incident List */}
-        <div className="w-full lg:flex-1">
-          <IncidentList view={view} onDataLoaded={(count) => setIncidentCount(count)} />
+        {/* ===== Incident List Section ===== */}
+        <div className="flex-1">
+          <IncidentList
+            view={view}
+            onDataLoaded={(count) => setIncidentCount(count)}
+          />
         </div>
       </div>
     </div>
