@@ -1,9 +1,8 @@
 "use client";
 import { useEffect } from "react";
-import { LayoutGrid, List } from "lucide-react";
 import IncidentCard from "./IncidentCard";
 
-const incidents = [
+export const incidents = [
   {
     id: "RPF-2025-0001",
     type: "Panic",
@@ -47,7 +46,6 @@ interface IncidentListProps {
 }
 
 export default function IncidentList({ view, onDataLoaded }: IncidentListProps) {
-  // Notify parent when data is loaded
   useEffect(() => {
     if (onDataLoaded) onDataLoaded(incidents.length);
   }, [onDataLoaded]);
@@ -68,22 +66,19 @@ export default function IncidentList({ view, onDataLoaded }: IncidentListProps) 
 
   return (
     <div className="w-full">
-      {/* GRID VIEW */}
-      {view === "grid" && (
+      {view === "grid" ? (
         <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
           {incidents.map((incident) => (
             <IncidentCard key={incident.id} incident={incident} />
           ))}
         </div>
-      )}
-
-      {/* LIST VIEW */}
-      {view === "list" && (
+      ) : (
         <div className="bg-white shadow-md rounded-2xl overflow-hidden border border-gray-100">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-[#0b2c64]">Incidents Table</h2>
+            <h2 className="text-xl font-semibold text-[#0b2c64]">
+              Incidents Table
+            </h2>
           </div>
-
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-[#f9fafb] text-[#0b2c64]">

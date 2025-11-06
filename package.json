@@ -11,6 +11,8 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.2",
     "axios": "^1.13.1",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.548.0",
     "mongoose": "^8.19.2",
     "next": "16.0.0",
