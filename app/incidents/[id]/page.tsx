@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import TopBar from "../../components/TopBar";
 import IncidentHeader from "../../components/incidents/IncidentHeader";
 import IncidentDetails from "../../components/incidents/IncidentDetails";
 import EvidenceSection from "../../components/incidents/EvidenceSection";
@@ -35,8 +34,6 @@ export default function IncidentPage() {
 
   return (
     <div className="min-h-screen bg-[#f1f6f9] text-[#0b2c64]">
-      {/* Top navigation */}
-      <TopBar />
 
       <main className="max-w-7xl mx-auto px-6 pb-12">
         {/* Header card: full-width white card with subtle border & rounded corners */}

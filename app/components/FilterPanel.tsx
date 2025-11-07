@@ -3,23 +3,40 @@
 import { useState } from "react";
 import { Filter, ChevronDown, Check } from "lucide-react";
 
-export default function FilterPanel() {
-  const [station, setStation] = useState("All Stations");
-  const [priority, setPriority] = useState("All Priorities");
-  const [status, setStatus] = useState("All Statuses");
-  const [time, setTime] = useState("Last 24 hours");
-  const [type, setType] = useState("");
+// Define props type
+interface Filters {
+  station: string;
+  priority: string;
+  status: string;
+  time: string;
+  type: string;
+}
 
+interface FilterPanelProps {
+  filters: Filters;
+  onChange: (updated: Partial<Filters>) => void;
+}
+
+export default function FilterPanel({ filters, onChange }: FilterPanelProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Reusable dropdown component
-  const Dropdown = ({ label, options, selected, onChange, id }: any) => (
+  const Dropdown = ({
+    label,
+    options,
+    selected,
+    id,
+  }: {
+    label: string;
+    options: string[];
+    selected: string;
+    id: keyof Filters;
+  }) => (
     <div className="relative w-full">
       <label className="block text-sm font-semibold mb-2 text-[#0b2c64]">
         {label}
       </label>
 
-      {/* Main button */}
       <button
         type="button"
         onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
@@ -35,25 +52,20 @@ export default function FilterPanel() {
         />
       </button>
 
-      {/* Dropdown list */}
       {openDropdown === id && (
-        <ul
-          className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg 
-                     shadow-lg max-h-60 overflow-auto text-sm py-1"
-        >
-          {options.map((opt: string) => (
+        <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto text-sm py-1">
+          {options.map((opt) => (
             <li
               key={opt}
               onClick={() => {
-                onChange(opt);
+                onChange({ [id]: opt });
                 setOpenDropdown(null);
               }}
-              className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md 
-                ${
-                  selected === opt
-                    ? "bg-[#e6efff] text-[#0b2c64] font-medium"
-                    : "text-[#0b2c64] hover:bg-[#e6efff]"
-                }`}
+              className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md ${
+                selected === opt
+                  ? "bg-[#e6efff] text-[#0b2c64] font-medium"
+                  : "text-[#0b2c64] hover:bg-[#e6efff]"
+              }`}
             >
               {selected === opt && <Check className="h-4 w-4 text-[#0b2c64]" />}
               <span>{opt}</span>
@@ -65,7 +77,7 @@ export default function FilterPanel() {
   );
 
   return (
-    <aside className="w-full lg:w-80 bg-white border border-gray-200 rounded-2xl shadow-sm p-5 text-[#0b2c64]">
+    <aside className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm p-5 text-[#0b2c64]">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <Filter className="w-5 h-5 text-[#0b2c64]" />
@@ -76,8 +88,7 @@ export default function FilterPanel() {
       <Dropdown
         id="station"
         label="Station"
-        selected={station}
-        onChange={setStation}
+        selected={filters.station}
         options={[
           "All Stations",
           "Coimbatore Junction",
@@ -104,8 +115,8 @@ export default function FilterPanel() {
                   type="radio"
                   name="type"
                   value={opt}
-                  checked={type === opt}
-                  onChange={() => setType(opt)}
+                  checked={filters.type === opt}
+                  onChange={() => onChange({ type: opt })}
                   className="mr-2 text-[#0b2c64] focus:ring-[#0b2c64]"
                 />
                 {opt}
@@ -120,8 +131,7 @@ export default function FilterPanel() {
         <Dropdown
           id="priority"
           label="Priority"
-          selected={priority}
-          onChange={setPriority}
+          selected={filters.priority}
           options={["All Priorities", "High", "Medium", "Low"]}
         />
       </div>
@@ -131,8 +141,7 @@ export default function FilterPanel() {
         <Dropdown
           id="status"
           label="Status"
-          selected={status}
-          onChange={setStatus}
+          selected={filters.status}
           options={[
             "All Statuses",
             "Open",
@@ -149,21 +158,22 @@ export default function FilterPanel() {
         <Dropdown
           id="time"
           label="Time Range"
-          selected={time}
-          onChange={setTime}
+          selected={filters.time}
           options={["Last 24 hours", "Last 7 days", "Last 30 days"]}
         />
       </div>
 
       {/* Reset Button */}
       <button
-        onClick={() => {
-          setStation("All Stations");
-          setPriority("All Priorities");
-          setStatus("All Statuses");
-          setTime("Last 24 hours");
-          setType("");
-        }}
+        onClick={() =>
+          onChange({
+            station: "All Stations",
+            priority: "All Priorities",
+            status: "All Statuses",
+            type: "",
+            time: "Last 24 hours",
+          })
+        }
         className="w-full mt-6 text-sm font-semibold text-[#0b2c64] border border-gray-300 rounded-lg py-2.5 hover:bg-[#f2f6ff] transition flex items-center justify-center gap-2"
       >
         ✕ Reset Filters

@@ -43,12 +43,19 @@ export const incidents = [
 interface IncidentListProps {
   view: "grid" | "list";
   onDataLoaded?: (count: number) => void;
+  incidentsData?: typeof incidents;
 }
 
-export default function IncidentList({ view, onDataLoaded }: IncidentListProps) {
+export default function IncidentList({
+  view,
+  onDataLoaded,
+  incidentsData,
+}: IncidentListProps) {
+  const data = incidentsData || incidents;
+
   useEffect(() => {
-    if (onDataLoaded) onDataLoaded(incidents.length);
-  }, [onDataLoaded]);
+    if (onDataLoaded) onDataLoaded(data.length);
+  }, [data, onDataLoaded]);
 
   const getPriority = (type: string) => {
     if (type === "Panic") return "emergency";
@@ -64,11 +71,19 @@ export default function IncidentList({ view, onDataLoaded }: IncidentListProps) 
     low: "bg-[#617fa3] text-white",
   };
 
+  if (data.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 text-center text-gray-500 font-medium">
+        No incidents found.
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {view === "grid" ? (
         <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
-          {incidents.map((incident) => (
+          {data.map((incident) => (
             <IncidentCard key={incident.id} incident={incident} />
           ))}
         </div>
@@ -92,7 +107,7 @@ export default function IncidentList({ view, onDataLoaded }: IncidentListProps) 
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm text-[#334155]">
-                {incidents.map((incident) => (
+                {data.map((incident) => (
                   <tr key={incident.id} className="hover:bg-[#f8fafc] transition">
                     <td className="px-6 py-4 font-semibold text-[#0b2c64]">{incident.id}</td>
                     <td className="px-6 py-4">{incident.type}</td>

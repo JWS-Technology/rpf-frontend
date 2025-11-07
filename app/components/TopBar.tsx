@@ -13,11 +13,17 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-export default function TopBar() {
+interface TopBarProps {
+  onSearch: (query: string) => void;
+  onStationSelect: (station: string) => void;
+}
+
+export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
   const [station, setStation] = useState("All Stations");
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const stations = [
@@ -25,6 +31,7 @@ export default function TopBar() {
     "Coimbatore Junction",
     "Chennai Central",
     "New Delhi",
+    "Howrah Junction",
   ];
 
   // Close dropdown when clicking outside
@@ -39,23 +46,34 @@ export default function TopBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Handle station selection
+  const handleStationChange = (selectedStation: string) => {
+    setStation(selectedStation);
+    setMenuOpen(false);
+    setMobileDropdown(false);
+    onStationSelect(selectedStation);
+  };
+
+  // Handle search input
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    onSearch(value);
+  };
+
   return (
     <header className="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 py-3">
-
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
-         {/* LEFT — Logo + Title */}
+        {/* LEFT — Logo */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* 🔹 Logo Image */}
           <Image
-            src="/rpf_logo.png"  // Make sure this file is inside your /public folder
+            src="/rpf_logo.png"
             alt="RPF Logo"
             width={52}
             height={52}
             className="object-contain rounded-md"
             priority
           />
-
-          {/* 🔹 Text beside Logo */}
           <div className="hidden sm:block">
             <h1 className="font-semibold text-[#0b2c64] text-base sm:text-lg">
               RPF Operations Portal
@@ -73,6 +91,8 @@ export default function TopBar() {
             <input
               type="text"
               placeholder="Search incidents by ID, station, or type..."
+              value={searchQuery}
+              onChange={handleSearch}
               className="bg-transparent outline-none text-gray-700 text-sm flex-1"
             />
           </div>
@@ -98,10 +118,7 @@ export default function TopBar() {
                   {stations.map((s) => (
                     <li
                       key={s}
-                      onClick={() => {
-                        setStation(s);
-                        setMenuOpen(false);
-                      }}
+                      onClick={() => handleStationChange(s)}
                       className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-md mx-1 transition ${
                         station === s
                           ? "bg-blue-100 text-[#0b2c64] font-medium"
@@ -120,7 +137,7 @@ export default function TopBar() {
           </div>
         </div>
 
-        {/* RIGHT — Icons + Burger */}
+        {/* RIGHT — Icons */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="relative">
             <Bell className="text-gray-600 w-5 h-5 cursor-pointer" />
@@ -136,98 +153,10 @@ export default function TopBar() {
             <span className="text-xs text-gray-500">Control Room Operator</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <User className="text-gray-700 w-5 h-5 cursor-pointer" />
-            <LogOut className="text-gray-700 w-5 h-5 cursor-pointer" />
-          </div>
-
-          <button
-            onClick={() => setMobileMenu(!mobileMenu)}
-            className="md:hidden flex items-center justify-center p-2 rounded-md border border-gray-200 hover:bg-gray-100"
-          >
-            {mobileMenu ? (
-              <X className="w-5 h-5 text-gray-700" />
-            ) : (
-              <Menu className="w-5 h-5 text-gray-700" />
-            )}
-          </button>
+          <User className="text-gray-700 w-5 h-5 cursor-pointer" />
+          <LogOut className="text-gray-700 w-5 h-5 cursor-pointer" />
         </div>
       </div>
-
-      {/* MOBILE MENU */}
-      {mobileMenu && (
-        <div className="md:hidden bg-gray-50 border-t border-gray-200 px-4 py-4 space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-            <div className="flex items-center gap-2">
-              <User className="text-[#0b2c64] w-6 h-6" />
-              <div>
-                <p className="text-sm font-semibold text-[#0b2c64]">
-                  Officer Kumar
-                </p>
-                <p className="text-xs text-gray-500">
-                  Control Room Operator
-                </p>
-              </div>
-            </div>
-            <button className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-medium">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
-          </div>
-
-          {/* Search */}
-          <div className="flex items-center bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
-            <Search size={18} className="text-gray-500 mr-2" />
-            <input
-              type="text"
-              placeholder="Search incidents..."
-              className="bg-transparent outline-none text-gray-700 text-sm flex-1"
-            />
-          </div>
-
-          {/* Custom Dropdown (Mobile same as Desktop) */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setMobileDropdown(!mobileDropdown)}
-              className="flex items-center justify-between bg-[#f9fafb] text-[#0b2c64] border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0b2c64] transition w-full"
-            >
-              <span className="truncate">{station}</span>
-              <ChevronDown
-                size={16}
-                className={`ml-2 text-[#0b2c64] transition-transform duration-200 ${
-                  mobileDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {mobileDropdown && (
-              <div className="absolute left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-full">
-                <ul className="py-1 text-sm text-[#0b2c64]">
-                  {stations.map((s) => (
-                    <li
-                      key={s}
-                      onClick={() => {
-                        setStation(s);
-                        setMobileDropdown(false);
-                      }}
-                      className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-md mx-1 transition ${
-                        station === s
-                          ? "bg-blue-100 text-[#0b2c64] font-medium"
-                          : "hover:bg-gray-100"
-                      }`}
-                    >
-                      <span>{s}</span>
-                      {station === s && (
-                        <Check className="w-4 h-4 text-[#0b2c64]" />
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   );
 }
