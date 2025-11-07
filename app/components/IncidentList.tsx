@@ -38,6 +38,24 @@ export const incidents = [
     status: "OPEN",
     officer: "SI Arun Ghosh",
   },
+   {
+    id: "RPF-2025-0005",
+    type: "Lost ",
+    description: "Unattended bag spotted near waiting area.",
+    station: "Howrah Junction",
+    date: "6 days ago",
+    status: "OPEN",
+    officer: "SI Arun Ghosh",
+  },
+  {
+    id: "RPF-2025-0006",
+    type: "Security Threat",
+    description: "Unattended bag spotted near waiting area.",
+    station: "pudukottai",
+    date: "6 days ago",
+    status: "closed",
+    officer: "SI Arun Ghosh",
+  },
 ];
 
 interface IncidentListProps {
