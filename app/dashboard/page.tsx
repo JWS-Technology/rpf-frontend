@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import TopBar from "../components/TopBar";
 import FilterPanel from "../components/FilterPanel";
 import IncidentList, { incidents } from "../components/IncidentList";
-import { LayoutGrid, List, Download } from "lucide-react";
+import { LayoutGrid, List, Download, ChevronDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 export default function DashboardPage() {
   const [view, setView] = useState<"grid" | "list">("list");
   const [incidentCount, setIncidentCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStation, setSelectedStation] = useState("All Stations");
-
-  // 🔹 Local filter state
   const [filters, setFilters] = useState({
     station: "All Stations",
     priority: "All Priorities",
@@ -23,7 +22,21 @@ export default function DashboardPage() {
     time: "Last 24 hours",
   });
 
-  // 🔹 Combine all filters (Topbar + FilterPanel)
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // 🔹 Close dropdown when clicked outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 🔹 Filter logic
   const filteredIncidents = useMemo(() => {
     return incidents.filter((i) => {
       const matchesSearch =
@@ -32,10 +45,8 @@ export default function DashboardPage() {
         i.description.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStation =
-        (selectedStation === "All Stations" ||
-          i.station === selectedStation) &&
-        (filters.station === "All Stations" ||
-          i.station === filters.station);
+        (selectedStation === "All Stations" || i.station === selectedStation) &&
+        (filters.station === "All Stations" || i.station === filters.station);
 
       const matchesType =
         !filters.type || i.type.toLowerCase() === filters.type.toLowerCase();
@@ -44,7 +55,6 @@ export default function DashboardPage() {
         filters.status === "All Statuses" ||
         i.status.toLowerCase() === filters.status.toLowerCase();
 
-      // Infer priority from type
       const priorityMap: Record<string, string> = {
         Panic: "High",
         Theft: "High",
@@ -53,6 +63,7 @@ export default function DashboardPage() {
         Lost: "Low",
         Security: "Low",
       };
+
       const matchesPriority =
         filters.priority === "All Priorities" ||
         priorityMap[i.type] === filters.priority;
@@ -107,6 +118,23 @@ export default function DashboardPage() {
     doc.save("Incidents_Report.pdf");
   };
 
+  // 🔹 Export Excel
+  const handleExportExcel = () => {
+    const worksheetData = filteredIncidents.map((i) => ({
+      ID: i.id,
+      Type: i.type,
+      Station: i.station,
+      Status: i.status,
+      Officer: i.officer || "-",
+      Date: i.date,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Incidents");
+    XLSX.writeFile(workbook, "Incidents_Report.xlsx");
+  };
+
   return (
     <div className="bg-[#f5f8fa] min-h-screen overflow-x-hidden">
       <TopBar onSearch={setSearchQuery} onStationSelect={setSelectedStation} />
@@ -155,14 +183,46 @@ export default function DashboardPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative" ref={exportRef}>
             <button
-              onClick={handleExportPDF}
+              onClick={() => setExportOpen(!exportOpen)}
               className="flex items-center gap-2 bg-white border border-gray-200 text-[#0b2c64] font-medium px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50 transition"
             >
               <Download size={18} />
-              Export PDF
+              Export
+              <ChevronDown
+                size={16}
+                className={`ml-1 transition-transform ${
+                  exportOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
+
+            {/* Dropdown Menu */}
+            {exportOpen && (
+              <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg w-44 z-20 animate-fadeIn">
+                <ul className="text-sm text-gray-700">
+                  <li
+                    onClick={() => {
+                      handleExportPDF();
+                      setExportOpen(false);
+                    }}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer rounded-t-md"
+                  >
+                    Export as PDF
+                  </li>
+                  <li
+                    onClick={() => {
+                      handleExportExcel();
+                      setExportOpen(false);
+                    }}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer rounded-b-md"
+                  >
+                    Export as Excel
+                  </li>
+                </ul>
+              </div>
+            )}
 
             <button
               onClick={() => setView("grid")}
@@ -198,7 +258,6 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Incident List Section with left margin */}
         <section className="flex-1 ml-2">
           <IncidentList
             view={view}
