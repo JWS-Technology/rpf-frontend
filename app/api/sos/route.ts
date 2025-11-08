@@ -1,12 +1,21 @@
+import { connect } from "@/dbconfig/db";
+import Incident from "@/models/incident.model";
 import { NextRequest, NextResponse } from "next/server";
 import Twilio from "twilio";
-
 export async function POST(req: NextRequest) {
+  await connect();
   try {
     const formData = await req.formData();
     const issue_type = formData.get("issue_type");
     const phone_number = formData.get("phone_number");
     const station = formData.get("station");
+
+    const newIncident = new Incident({
+      issue_type,
+      phone_number,
+      station,
+    });
+    await newIncident.save();
 
     const formattedBody = `
     New Incident Report Submitted:
@@ -28,7 +37,7 @@ export async function POST(req: NextRequest) {
       // body: "Hello! This is noel sebu.",
       to: `${process.env.TO_WHATSAPP_NUMBER}`,
     });
-    console.log("✅ Message SID:", message.sid);
+    // console.log("✅ Message SID:", message.sid);
 
     return NextResponse.json(
       { message: "message successfully sent", success: true },
