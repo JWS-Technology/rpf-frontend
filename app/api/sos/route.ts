@@ -16,12 +16,14 @@ export async function POST(req: NextRequest) {
       mediaUrlToSend = [audio_url];
     }
 
-    const newIncident = new Incident({
-      issue_type,
-      phone_number,
-      station,
-    });
-    await newIncident.save();
+    if (issue_type) {
+      const newIncident = new Incident({
+        issue_type,
+        phone_number,
+        station,
+      });
+      await newIncident.save();
+    }
 
     const formattedBody = `
       New Incident Report Submitted:
