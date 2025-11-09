@@ -11,6 +11,10 @@ export async function POST(req: NextRequest) {
     const station = formData.get("station");
     const audio_url = formData.get("audio_url");
 
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const client = Twilio(accountSid, authToken);
+
     let mediaUrlToSend: string[] | undefined = undefined;
     if (typeof audio_url === "string") {
       mediaUrlToSend = [audio_url];
@@ -23,9 +27,8 @@ export async function POST(req: NextRequest) {
         station,
       });
       await newIncident.save();
-    }
 
-    const formattedBody = `
+      const formattedBody = `
       New Incident Report Submitted:
 
       Issue: ${issue_type}
@@ -35,22 +38,19 @@ export async function POST(req: NextRequest) {
       Please take immediate action.
     `;
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const client = Twilio(accountSid, authToken);
-
-    const message = await client.messages.create({
-      from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      body: formattedBody,
-      // body: "Hello! This is noel sebu.",
-      to: `${process.env.TO_WHATSAPP_NUMBER}`,
-    });
-    // console.log("✅ Message SID:", message.sid);
+      const message = await client.messages.create({
+        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        body: formattedBody,
+        // body: "Hello! This is noel sebu.",
+        to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      });
+      // console.log("✅ Message SID:", message.sid);
+    }
 
     if (mediaUrlToSend) {
       const audioMessage = await client.messages.create({
         from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        body: formattedBody,
+        // body: formattedBody,
         // body: "Hello! This is noel sebu.",
         mediaUrl: mediaUrlToSend,
         to: `${process.env.TO_WHATSAPP_NUMBER}`,
