@@ -147,10 +147,10 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-[#0b2c64]">
                 All Incidents
               </h1>
-              <p className="text-sm text-[#4a5a73] mt-1">
+              {/* <p className="text-sm text-[#4a5a73] mt-1">
                 Showing {incidentCount}{" "}
                 {incidentCount === 1 ? "incident" : "incidents"}
-              </p>
+              </p> */}
             </div>
 
             {/* Status Summary */}
