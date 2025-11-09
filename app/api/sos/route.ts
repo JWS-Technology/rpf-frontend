@@ -9,11 +9,12 @@ export async function POST(req: NextRequest) {
     const issue_type = formData.get("issue_type");
     const phone_number = formData.get("phone_number");
     const station = formData.get("station");
+    const audio_url = formData.get("audio_url");
 
     const newIncident = new Incident({
       issue_type,
       phone_number,
-      station,
+        station,
     });
     await newIncident.save();
 
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     Issue: ${issue_type}
     Call now: ${phone_number}
     Location/Station: ${station}
+    audio: ${audio_url}
 
     Please take immediate action.
     `;
