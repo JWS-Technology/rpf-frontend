@@ -24,13 +24,13 @@ export async function POST(req: NextRequest) {
     await newIncident.save();
 
     const formattedBody = `
-    New Incident Report Submitted:
+      New Incident Report Submitted:
 
-    Issue: ${issue_type}
-    Call now: ${phone_number}
-    Location/Station: ${station}
+      Issue: ${issue_type}
+      Call now: ${phone_number}
+      Location/Station: ${station}
 
-    Please take immediate action.
+      Please take immediate action.
     `;
 
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
