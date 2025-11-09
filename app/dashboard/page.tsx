@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import TopBar from "../components/TopBar";
-import FilterPanel from "../components/FilterPanel";
-import IncidentList, { incidents } from "../components/IncidentList";
+import TopBar from "../components/dashboard-componets/TopBar";
+import FilterPanel from "../components/dashboard-componets/FilterPanel";
+import IncidentList, { incidents } from "../components/dashboard-componets/IncidentList";
 import { LayoutGrid, List, Download, ChevronDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
