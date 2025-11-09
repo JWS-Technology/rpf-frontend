@@ -20,6 +20,45 @@ export async function POST(req: NextRequest) {
       mediaUrlToSend = [audio_url];
     }
 
+    if (issue_type === "EMERGENCY") {
+      const newIncident = new Incident({
+        issue_type,
+        phone_number,
+        station,
+      });
+      await newIncident.save();
+
+      const formattedBody = `
+      New Incident Report Submitted:
+
+      Issue: ${issue_type}
+      Location/Station: ${station}
+
+      Please take immediate action.
+    `;
+
+      const message = await client.messages.create({
+        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        body: formattedBody,
+        // body: "Hello! This is noel sebu.",
+        to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      });
+      //
+
+      const audioMessage = await client.messages.create({
+        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        // body: formattedBody,
+        // body: "Hello! This is noel sebu.",
+        mediaUrl: mediaUrlToSend,
+        to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      });
+
+      return NextResponse.json(
+        { message: "message successfully sent", success: true },
+        { status: 200 }
+      );
+    }
+
     if (issue_type) {
       const newIncident = new Incident({
         issue_type,
