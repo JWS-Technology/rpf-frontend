@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
     if (issue_type === "EMERGENCY") {
       const newIncident = new Incident({
         issue_type,
-        phone_number,
         station,
       });
       await newIncident.save();
