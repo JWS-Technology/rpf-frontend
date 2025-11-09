@@ -11,10 +11,15 @@ export async function POST(req: NextRequest) {
     const station = formData.get("station");
     const audio_url = formData.get("audio_url");
 
+    let mediaUrlToSend: string[] | undefined = undefined;
+    if (typeof audio_url === "string") {
+      mediaUrlToSend = [audio_url];
+    }
+
     const newIncident = new Incident({
       issue_type,
       phone_number,
-        station,
+      station,
     });
     await newIncident.save();
 
@@ -24,7 +29,6 @@ export async function POST(req: NextRequest) {
     Issue: ${issue_type}
     Call now: ${phone_number}
     Location/Station: ${station}
-    audio: ${audio_url}
 
     Please take immediate action.
     `;
@@ -37,6 +41,7 @@ export async function POST(req: NextRequest) {
       from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
       body: formattedBody,
       // body: "Hello! This is noel sebu.",
+      mediaUrl: mediaUrlToSend,
       to: `${process.env.TO_WHATSAPP_NUMBER}`,
     });
     // console.log("✅ Message SID:", message.sid);
