@@ -46,6 +46,17 @@ export async function POST(req: NextRequest) {
     });
     // console.log("✅ Message SID:", message.sid);
 
+    if (mediaUrlToSend) {
+      const audioMessage = await client.messages.create({
+        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        body: formattedBody,
+        // body: "Hello! This is noel sebu.",
+        mediaUrl: mediaUrlToSend,
+        to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      });
+      // console.log("✅ Message SID:", audioMessage.sid);
+    }
+
     return NextResponse.json(
       { message: "message successfully sent", success: true },
       { status: 200 }
