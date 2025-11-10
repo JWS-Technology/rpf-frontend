@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       const newIncident = new Incident({
         issue_type,
         station,
+        audio_url,
       });
       await newIncident.save();
 
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
         issue_type,
         phone_number,
         station,
+        audio_url,
       });
       await newIncident.save();
 
@@ -83,17 +85,17 @@ export async function POST(req: NextRequest) {
         to: `${process.env.TO_WHATSAPP_NUMBER}`,
       });
       // console.log("✅ Message SID:", message.sid);
-    }
 
-    if (mediaUrlToSend) {
-      const audioMessage = await client.messages.create({
-        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        // body: formattedBody,
-        // body: "Hello! This is noel sebu.",
-        mediaUrl: mediaUrlToSend,
-        to: `${process.env.TO_WHATSAPP_NUMBER}`,
-      });
-      // console.log("✅ Message SID:", audioMessage.sid);
+      if (mediaUrlToSend) {
+        const audioMessage = await client.messages.create({
+          from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+          // body: formattedBody,
+          // body: "Hello! This is noel sebu.",
+          mediaUrl: mediaUrlToSend,
+          to: `${process.env.TO_WHATSAPP_NUMBER}`,
+        });
+        // console.log("✅ Message SID:", audioMessage.sid);
+      }
     }
 
     return NextResponse.json(
