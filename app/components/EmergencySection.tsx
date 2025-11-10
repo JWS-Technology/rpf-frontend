@@ -22,6 +22,15 @@ type EmergencySectionProps = {
   submitDisabled?: boolean;
 };
 
+// Helper function to get the correct file extension
+const getExtensionFromMimeType = (mimeType: string): string => {
+  if (mimeType.includes("mp4")) return "mp4";
+  if (mimeType.includes("mpeg")) return "mp3";
+  if (mimeType.includes("webm")) return "webm";
+  if (mimeType.includes("aac")) return "aac";
+  return "audio"; // fallback
+};
+
 export default function EmergencySection({
   onAudioRecorded,
   onPhotoSelected,
@@ -48,18 +57,18 @@ export default function EmergencySection({
   const [photoFile, setPhotoFile] = React.useState<File | null>(null);
   const [photoURL, setPhotoURL] = React.useState<string | null>(null);
 
-  // 2. MODIFIED reqHelp function
   const reqHelp = async () => {
+    setisLoading(true);
     try {
-      setisLoading(true);
       let audioUrl: string | null = null; // To store the public URL
 
       // First, try to upload audio if it exists
       if (audioBlob) {
         try {
-          // Create a unique file name
-          const fileExtension = audioBlob.type.split("/")[1] || "webm";
-          const fileName = `emergency-audio-${Date.now()}.${fileExtension}`;
+          // Dynamically set file extension
+          // const fileExtension = getExtensionFromMimeType(audioBlob.type);
+          // const fileName = `emergency-audio-${Date.now()}.${fileExtension}`;
+          const fileName = `emergency-audio-${Date.now()}.aac`;
 
           console.log("Uploading audio to Supabase...");
           audioUrl = await uploadAudioToSupabase(audioBlob, fileName);
@@ -77,24 +86,20 @@ export default function EmergencySection({
       formData.append("phone_number", phone_number);
       formData.append("station", station);
 
-      // Add the Supabase URL to the form data IF it exists
       if (audioUrl) {
         formData.append("audio_url", audioUrl);
       }
-      
-      // Note: You could do the same for photoFile here if you implement photo uploads
 
       // Post data to your own API route
       console.log("Submitting complaint to /api/sos...");
       const res = await axios.post("/api/sos", formData);
       console.log("Complaint submitted:", res);
-      
+
       setisLoading(false);
-      
+
       // Optional: Reset form on successful submission
       // handleReset();
       // alert("Your complaint has been submitted successfully.");
-
     } catch (error) {
       setisLoading(false);
       console.error("Error in submitting complaint: " + error);
@@ -102,19 +107,29 @@ export default function EmergencySection({
     }
   };
 
+  // MODIFIED pickMimeType to prioritize AAC/MP4
   const pickMimeType = () => {
     if (typeof MediaRecorder === "undefined") return "";
     const candidates = [
+      // Prioritize AAC/MP4 formats
+      "audio/mp4;codecs=mp4a.40.2",
+      "audio/mp4;codecs=aac",
+      "audio/mp4",
+      "audio/aac",
+      // Fallback to WebM
       "audio/webm;codecs=opus",
       "audio/webm",
-      "audio/mp4",
+      // Fallback to MPEG
       "audio/mpeg",
     ];
     for (const m of candidates) {
-      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m))
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) {
+        console.log("Using MIME type:", m); // Good for debugging
         return m;
+      }
     }
-    return "";
+    console.log("No preferred MIME type supported, using browser default.");
+    return ""; // Let the browser use its default
   };
 
   React.useEffect(() => {
@@ -164,8 +179,9 @@ export default function EmergencySection({
         if (ev.data && ev.data.size > 0) chunks.push(ev.data);
       };
       mr.onstop = () => {
+        // Use the recorder's actual mimeType for the blob
         const blob = new Blob(chunks, {
-          type: chunks[0]?.type || "audio/webm",
+          type: mr.mimeType || "audio/webm",
         });
         setAudioChunks(chunks);
         setAudioBlob(blob);
@@ -177,6 +193,7 @@ export default function EmergencySection({
       setIsRecording(true);
     } catch (err) {
       console.error("microphone access denied or unavailable", err);
+      // Reverted to original alert
       alert(
         "Microphone unavailable. Please allow microphone permission or use upload."
       );
@@ -273,6 +290,7 @@ export default function EmergencySection({
   const showPreview = Boolean(audioURL || photoURL);
 
   return (
+    // Removed the outer div and <Toaster />
     <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
       {/* Emergency Banner */}
       <div
@@ -280,14 +298,11 @@ export default function EmergencySection({
         className="bg-rose-600 text-rose-200 rounded-md py-4"
       >
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
-          {/* 🩸 Description ABOVE */}
           <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
             In case of emergency, record audio.
             <br />
             आपात स्थिति में ऑडियो रिकॉर्ड करें।
           </p>
-
-          {/* Main Emergency Line */}
           <div className="flex items-center justify-center gap-3 sm:gap-10">
             <OctagonAlert size={40} className="animate-blink" />
             <span className="uppercase text-md sm:text-xl tracking-widest">
@@ -338,12 +353,9 @@ export default function EmergencySection({
             </div>
           </div>
         </div>
-
-        {/* Upload Photo Card (commented out as in original) */}
-        {/* <label ... </label> */}
       </div>
 
-      {/* Conditionally-rendered Preview area: appears only when there is content */}
+      {/* Conditionally-rendered Preview area */}
       {showPreview && (
         <div className="flex flex-col md:flex-row gap-4">
           {/* Audio preview (only if present) */}
@@ -362,7 +374,11 @@ export default function EmergencySection({
                   <div className="flex items-center gap-3">
                     <a
                       href={audioURL}
-                      download={`recording-${Date.now()}.webm`}
+                      download={`recording-${Date.now()}.${
+                        audioBlob
+                          ? getExtensionFromMimeType(audioBlob.type)
+                          : "audio"
+                      }`}
                       className="underline text-blue-600 hover:text-blue-800"
                     >
                       Download audio
@@ -422,6 +438,7 @@ export default function EmergencySection({
           onClick={handleReset}
           className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border border-gray-200 bg-white text-[#0b3b66] hover:bg-gray-50"
           aria-label="Reset / रीसेट करें"
+          disabled={isLoading} // Disable reset when loading
         >
           <RotateCw className="w-5 h-5" />
           Reset / रीसेट करें
@@ -429,12 +446,11 @@ export default function EmergencySection({
 
         <button
           type="button"
-          // onClick={handleSubmit}
-          onClick={reqHelp} // This now handles the upload and API submission
-          disabled={submitDisabled || isLoading} // Disable button when loading
+          onClick={reqHelp}
+          disabled={submitDisabled || isLoading}
           className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-white ${
-            submitDisabled || isLoading // Check isLoading here
-              ? "bg-emerald-300 cursor-not-allowed" // Modified disabled state
+            submitDisabled || isLoading
+              ? "bg-emerald-300 cursor-not-allowed"
               : "bg-emerald-500 hover:bg-emerald-600"
           }`}
           aria-label="Submit Complaint / शिकायत दर्ज करें"
@@ -442,7 +458,7 @@ export default function EmergencySection({
           {isLoading ? (
             <div className="flex gap-3 items-center justify-center">
               <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-              <h1 className="font-semibold">Submitting...</h1> 
+              <h1 className="font-semibold">Submitting...</h1>
             </div>
           ) : (
             <div className="flex gap-2">
