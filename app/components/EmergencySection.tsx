@@ -6,13 +6,14 @@ import {
   RotateCw,
   CheckCircle,
   OctagonAlert,
-  Trash2, // Added Trash2 icon
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { clearAllData } from "@/lib/features/sos-data/sosSlice";
 import axios from "axios";
 import { RootState } from "@/lib/store";
+import { uploadAudioToSupabase } from "@/utils/storage"; // 1. Import Supabase upload function
 
 type EmergencySectionProps = {
   onAudioRecorded?: (blob: Blob | null) => void;
@@ -47,21 +48,57 @@ export default function EmergencySection({
   const [photoFile, setPhotoFile] = React.useState<File | null>(null);
   const [photoURL, setPhotoURL] = React.useState<string | null>(null);
 
+  // 2. MODIFIED reqHelp function
   const reqHelp = async () => {
     try {
       setisLoading(true);
+      let audioUrl: string | null = null; // To store the public URL
+
+      // First, try to upload audio if it exists
+      if (audioBlob) {
+        try {
+          // Create a unique file name
+          const fileExtension = audioBlob.type.split("/")[1] || "webm";
+          const fileName = `emergency-audio-${Date.now()}.${fileExtension}`;
+
+          console.log("Uploading audio to Supabase...");
+          audioUrl = await uploadAudioToSupabase(audioBlob, fileName);
+          console.log("Audio uploaded successfully:", audioUrl);
+        } catch (uploadError) {
+          console.error("Failed to upload audio to Supabase:", uploadError);
+          // You could alert the user here that audio failed to upload
+          // For now, the complaint will proceed without the audio URL
+        }
+      }
+
+      // Build the FormData for your API
       const formData = new FormData();
       formData.append("issue_type", issue_type);
       formData.append("phone_number", phone_number);
       formData.append("station", station);
 
+      // Add the Supabase URL to the form data IF it exists
+      if (audioUrl) {
+        formData.append("audio_url", audioUrl);
+      }
+      
+      // Note: You could do the same for photoFile here if you implement photo uploads
+
+      // Post data to your own API route
+      console.log("Submitting complaint to /api/sos...");
       const res = await axios.post("/api/sos", formData);
-      // console.log(res);
+      console.log("Complaint submitted:", res);
+      
       setisLoading(false);
+      
+      // Optional: Reset form on successful submission
+      // handleReset();
+      // alert("Your complaint has been submitted successfully.");
+
     } catch (error) {
       setisLoading(false);
-
-      // console.log("error in issue submit" + error);
+      console.error("Error in submitting complaint: " + error);
+      // alert("There was an error submitting your complaint. Please try again.");
     }
   };
 
@@ -176,26 +213,6 @@ export default function EmergencySection({
     e.currentTarget.value = "";
   };
 
-  // Added new function to delete only audio
-  const handleDeleteAudio = () => {
-    if (audioURL) {
-      URL.revokeObjectURL(audioURL);
-      setAudioURL(null);
-    }
-    setAudioChunks([]);
-    setAudioBlob(null);
-    setIsRecording(false);
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      try {
-        mediaRecorder.stop();
-      } catch {
-        // ignore
-      }
-      setMediaRecorder(null);
-    }
-    onAudioRecorded?.(null);
-  };
-
   const handleReset = () => {
     dispatch(clearAllData());
     if (audioURL) {
@@ -231,6 +248,27 @@ export default function EmergencySection({
     });
   };
 
+  // Handler to delete only audio
+  const handleDeleteAudio = () => {
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+      setAudioURL(null);
+    }
+    setAudioBlob(null);
+    setAudioChunks([]);
+    onAudioRecorded?.(null);
+  };
+
+  // Handler to delete only photo
+  const handleDeletePhoto = () => {
+    if (photoURL) {
+      URL.revokeObjectURL(photoURL);
+      setPhotoURL(null);
+    }
+    setPhotoFile(null);
+    onPhotoSelected?.(null);
+  };
+
   // Only show preview container if there is audio or photo
   const showPreview = Boolean(audioURL || photoURL);
 
@@ -238,13 +276,9 @@ export default function EmergencySection({
     <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
       {/* Emergency Banner */}
       <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") handleRecordToggle();
-        }}
         onClick={handleRecordToggle}
-        className="bg-rose-600 text-rose-200 rounded-md py-4">
+        className="bg-rose-600 text-rose-200 rounded-md py-4"
+      >
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
           {/* 🩸 Description ABOVE */}
           <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
@@ -253,16 +287,8 @@ export default function EmergencySection({
             आपात स्थिति में ऑडियो रिकॉर्ड करें।
           </p>
 
-          {/* Main Emergency Line (Clickable) */}
-          <div
-
-            className="flex items-center justify-center gap-3 sm:gap-10 cursor-pointer"
-
-            aria-pressed={isRecording}
-            aria-label={
-              isRecording ? "Stop recording" : "Start emergency recording"
-            }
-          >
+          {/* Main Emergency Line */}
+          <div className="flex items-center justify-center gap-3 sm:gap-10">
             <OctagonAlert size={40} className="animate-blink" />
             <span className="uppercase text-md sm:text-xl tracking-widest">
               EMERGENCY
@@ -281,22 +307,25 @@ export default function EmergencySection({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleRecordToggle();
           }}
-          className={`flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none ${isRecording
-            ? "bg-[#234b74] text-white"
-            : "bg-white text-[#0b3b66]"
-            }`}
+          className={`flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none ${
+            isRecording
+              ? "bg-[#234b74] text-white"
+              : "bg-white text-[#0b3b66]"
+          }`}
           onClick={handleRecordToggle}
           aria-pressed={isRecording}
           aria-label={isRecording ? "Stop recording" : "Record audio"}
         >
           <div className="flex items-center gap-3">
             <div
-              className={`p-3 rounded-md ${isRecording ? "bg-white/20" : "bg-white/5"
-                }`}
+              className={`p-3 rounded-md ${
+                isRecording ? "bg-white/20" : "bg-white/5"
+              }`}
             >
               <Mic
-                className={`w-6 h-6 ${isRecording ? "text-white" : "text-[#0b3b66]"
-                  }`}
+                className={`w-6 h-6 ${
+                  isRecording ? "text-white" : "text-[#0b3b66]"
+                }`}
               />
             </div>
             <div className="text-center">
@@ -310,28 +339,8 @@ export default function EmergencySection({
           </div>
         </div>
 
-        {/* Upload Photo Card */}
-        {/* <label
-          htmlFor="photo-upload"
-          className="flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none bg-white text-[#0b3b66]"
-        >
-          <div className="p-3 rounded-md bg-white/5">
-            <Camera className="w-6 h-6 text-[#0b3b66]" />
-          </div>
-          <div className="text-center">
-            <div className="font-semibold">Upload Photo</div>
-            <div className="text-sm">फोटो अपलोड करें</div>
-            <input
-              id="photo-upload"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileInput}
-              className="sr-only"
-            />
-            {photoFile && <div className="text-xs mt-2 text-gray-600">Selected: {photoFile.name}</div>}
-          </div>
-        </label> */}
+        {/* Upload Photo Card (commented out as in original) */}
+        {/* <label ... </label> */}
       </div>
 
       {/* Conditionally-rendered Preview area: appears only when there is content */}
@@ -340,18 +349,7 @@ export default function EmergencySection({
           {/* Audio preview (only if present) */}
           {audioURL && (
             <div className="p-3 border rounded-md flex-1">
-              {/* Updated Header with Delete Button */}
-              <div className="flex justify-between items-center mb-2">
-                <div className="font-medium">Audio Preview</div>
-                <button
-                  type="button"
-                  onClick={handleDeleteAudio}
-                  className="text-gray-500 hover:text-red-600"
-                  aria-label="Delete audio"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
+              <div className="font-medium mb-2">Audio Preview</div>
               <div className="space-y-2">
                 <audio
                   key={audioURL}
@@ -360,17 +358,31 @@ export default function EmergencySection({
                   src={audioURL}
                   className="w-full"
                 />
-                <div className="flex items-center gap-3 text-sm">
-                  <a
-                    href={audioURL}
-                    download={`recording-${Date.now()}.webm`}
-                    className="underline"
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={audioURL}
+                      download={`recording-${Date.now()}.webm`}
+                      className="underline text-blue-600 hover:text-blue-800"
+                    >
+                      Download audio
+                    </a>
+                    <span className="text-gray-500">
+                      {audioBlob
+                        ? `${Math.round(audioBlob.size / 1024)} KB`
+                        : ""}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteAudio}
+                    className="flex items-center gap-1 text-red-600 hover:text-red-800 font-medium"
+                    aria-label="Delete audio"
                   >
-                    Download audio
-                  </a>
-                  <span className="text-gray-500">
-                    {audioBlob ? `${Math.round(audioBlob.size / 1024)} KB` : ""}
-                  </span>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
@@ -379,8 +391,18 @@ export default function EmergencySection({
           {/* Photo preview (only if present) */}
           {photoURL && (
             <div className="p-3 border rounded-md flex-1">
-              <div className="font-medium mb-2">Photo Preview</div>
-              {/* <img src={photoURL} alt="Preview" className="max-h-64 w-full object-contain rounded-md" /> */}
+              <div className="flex justify-between items-center mb-2">
+                <div className="font-medium">Photo Preview</div>
+                <button
+                  type="button"
+                  onClick={handleDeletePhoto}
+                  className="flex items-center gap-1 text-red-600 hover:text-red-800 text-sm font-medium"
+                  aria-label="Delete photo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
               <Image
                 height={100}
                 width={100}
@@ -408,18 +430,19 @@ export default function EmergencySection({
         <button
           type="button"
           // onClick={handleSubmit}
-          onClick={reqHelp}
-          disabled={submitDisabled}
-          className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-white ${submitDisabled
-            ? "bg-green-300 cursor-not-allowed"
-            : "bg-emerald-500 hover:bg-emerald-600"
-            }`}
+          onClick={reqHelp} // This now handles the upload and API submission
+          disabled={submitDisabled || isLoading} // Disable button when loading
+          className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-white ${
+            submitDisabled || isLoading // Check isLoading here
+              ? "bg-emerald-300 cursor-not-allowed" // Modified disabled state
+              : "bg-emerald-500 hover:bg-emerald-600"
+          }`}
           aria-label="Submit Complaint / शिकायत दर्ज करें"
         >
           {isLoading ? (
             <div className="flex gap-3 items-center justify-center">
               <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-              <h1 className="font-semibold">Loading...</h1>
+              <h1 className="font-semibold">Submitting...</h1> 
             </div>
           ) : (
             <div className="flex gap-2">
