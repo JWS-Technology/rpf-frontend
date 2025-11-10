@@ -1,6 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Mic, Camera, RotateCw, CheckCircle, OctagonAlert } from "lucide-react";
+import {
+  Mic,
+  Camera,
+  RotateCw,
+  CheckCircle,
+  OctagonAlert,
+  Trash2, // Added Trash2 icon
+} from "lucide-react";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { clearAllData } from "@/lib/features/sos-data/sosSlice";
@@ -169,6 +176,26 @@ export default function EmergencySection({
     e.currentTarget.value = "";
   };
 
+  // Added new function to delete only audio
+  const handleDeleteAudio = () => {
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+      setAudioURL(null);
+    }
+    setAudioChunks([]);
+    setAudioBlob(null);
+    setIsRecording(false);
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      try {
+        mediaRecorder.stop();
+      } catch {
+        // ignore
+      }
+      setMediaRecorder(null);
+    }
+    onAudioRecorded?.(null);
+  };
+
   const handleReset = () => {
     dispatch(clearAllData());
     if (audioURL) {
@@ -210,27 +237,40 @@ export default function EmergencySection({
   return (
     <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl space-y-6 border-2 border-blue-100">
       {/* Emergency Banner */}
-<div className="bg-rose-600 text-rose-200 rounded-md py-4">
-  <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
-    
-    {/* 🩸 Description ABOVE */}
-    <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
-      In case of emergency, record audio.
-      <br />
-      आपात स्थिति में ऑडियो रिकॉर्ड करें।
-    </p>
+      <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") handleRecordToggle();
+        }}
+        onClick={handleRecordToggle}
+        className="bg-rose-600 text-rose-200 rounded-md py-4">
+        <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 font-semibold text-center">
+          {/* 🩸 Description ABOVE */}
+          <p className="text-sm sm:text-base text-rose-100 font-normal mt-0 px-4">
+            In case of emergency, record audio.
+            <br />
+            आपात स्थिति में ऑडियो रिकॉर्ड करें।
+          </p>
 
-    {/* Main Emergency Line */}
-    <div className="flex items-center justify-center gap-3 sm:gap-10">
-      <OctagonAlert size={40} className="animate-blink" />
-      <span className="uppercase text-md sm:text-xl tracking-widest">
-        EMERGENCY
-      </span>
-      <OctagonAlert size={40} className="animate-blink" />
-    </div>
-  </div>
-</div>
+          {/* Main Emergency Line (Clickable) */}
+          <div
 
+            className="flex items-center justify-center gap-3 sm:gap-10 cursor-pointer"
+
+            aria-pressed={isRecording}
+            aria-label={
+              isRecording ? "Stop recording" : "Start emergency recording"
+            }
+          >
+            <OctagonAlert size={40} className="animate-blink" />
+            <span className="uppercase text-md sm:text-xl tracking-widest">
+              EMERGENCY
+            </span>
+            <OctagonAlert size={40} className="animate-blink" />
+          </div>
+        </div>
+      </div>
 
       {/* Actions Row (Record / Upload) */}
       <div className="">
@@ -241,7 +281,9 @@ export default function EmergencySection({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleRecordToggle();
           }}
-          className={`flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none ${isRecording ? "bg-[#234b74] text-white" : "bg-white text-[#0b3b66]"
+          className={`flex items-center justify-center gap-3 p-6 rounded-lg border-2 border-[#234b74] cursor-pointer select-none ${isRecording
+            ? "bg-[#234b74] text-white"
+            : "bg-white text-[#0b3b66]"
             }`}
           onClick={handleRecordToggle}
           aria-pressed={isRecording}
@@ -298,7 +340,18 @@ export default function EmergencySection({
           {/* Audio preview (only if present) */}
           {audioURL && (
             <div className="p-3 border rounded-md flex-1">
-              <div className="font-medium mb-2">Audio Preview</div>
+              {/* Updated Header with Delete Button */}
+              <div className="flex justify-between items-center mb-2">
+                <div className="font-medium">Audio Preview</div>
+                <button
+                  type="button"
+                  onClick={handleDeleteAudio}
+                  className="text-gray-500 hover:text-red-600"
+                  aria-label="Delete audio"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
               <div className="space-y-2">
                 <audio
                   key={audioURL}
@@ -363,7 +416,6 @@ export default function EmergencySection({
             }`}
           aria-label="Submit Complaint / शिकायत दर्ज करें"
         >
-
           {isLoading ? (
             <div className="flex gap-3 items-center justify-center">
               <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
