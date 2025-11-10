@@ -6,6 +6,7 @@ const incidentSchema = new mongoose.Schema(
     // description: { type: String },
     phone_number: { type: String, default: "nill" },
     station: { type: String },
+    audio_url: {type: String},
     // location: { type: String },
     // status: {
     //   type: String,
