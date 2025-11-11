@@ -16,22 +16,18 @@ export default function IncidentDetails({ incident }: any) {
           </p>
         </div>
 
-        {/* Description */}
-        <div>
-          <p className="text-[#0b2c64] font-medium">Description</p>
-          <p className="text-gray-700">{incident.description}</p>
-        </div>
+
 
         {/* Complainant Phone */}
         <div>
           <p className="text-[#0b2c64] font-medium">Complainant Phone</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="bg-gray-100 px-3 py-1 rounded-lg text-gray-700 font-mono">
-              {incident.phone}
-            </span>
-            <button className="text-[#0b2c64] text-sm font-medium underline hover:text-[#092659]">
+            <a className="bg-gray-100 px-3 py-1 rounded-lg text-gray-700 font-mono" href={`tel:+91${incident.phone_number}`}>
+              +91 {incident.phone_number}
+            </a>
+            {/* <button className="text-[#0b2c64] text-sm font-medium underline hover:text-[#092659]">
               Reveal
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
