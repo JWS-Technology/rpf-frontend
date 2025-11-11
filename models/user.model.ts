@@ -1,7 +1,8 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose";
 
-const userSchema = new mongoose.Schema(
+const officerSchema = new Schema(
   {
+    officerId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     phone_number: { type: String },
     role: {
@@ -15,4 +16,5 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.User || mongoose.model("User", userSchema);
+const Officer = models.Officer || model("Officer", officerSchema);
+export default Officer;
