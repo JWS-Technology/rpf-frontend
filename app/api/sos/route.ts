@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const phone_number = formData.get("phone_number");
     const station = formData.get("station");
     const audio_url = formData.get("audio_url");
-
+    const status = "OPEN";
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const client = Twilio(accountSid, authToken);
@@ -70,10 +70,11 @@ export async function POST(req: NextRequest) {
         issue_type,
         phone_number,
         station,
+        status,
         audio_url,
       });
       await newIncident.save();
-
+      console.log(newIncident);
       const latestDevice = await Device.findOne().sort({ createdAt: -1 });
       sendNotification(latestDevice.device_token);
 
