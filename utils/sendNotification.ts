@@ -1,37 +1,17 @@
 // utils/sendNotification.ts
 import admin from "firebase-admin";
-import { readFileSync } from "fs";
-import path from "path";
-
-const FILE_NAME = "rpfpolice-firebase-adminsdk-fbsvc-81888894b9.json";
-
-// Try to resolve JSON path inside the utils folder (project-root/utils/FILE_NAME)
-const jsonPath = path.join(process.cwd(), "utils", FILE_NAME);
 
 /**
  * Initialize Firebase Admin SDK.
  * Priority:
- *  1) service account JSON at project-root/utils/<FILE_NAME>
- *  2) environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+ * 1) environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
  */
 function initFirebaseAdmin() {
   if (admin.apps.length) return;
 
-  try {
-    // 1) Try to load JSON file
-    const raw = readFileSync(jsonPath, { encoding: "utf8" });
-    const serviceAccount = JSON.parse(raw);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log("✅ Firebase Admin initialized from JSON:", jsonPath);
-    return;
-  } catch (err) {
-    console.warn("ℹ️ Firebase JSON not found or unreadable at", jsonPath);
-  }
-
-  // 2) Fallback to env vars (suitable for Vercel / production)
+  // 1) Load from env vars (suitable for Vercel / production)
   const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
+
   if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
     admin.initializeApp({
       credential: admin.credential.cert({
@@ -41,13 +21,13 @@ function initFirebaseAdmin() {
         privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
       }),
     });
-    console.log("✅ Firebase Admin initialized from environment variables.");
+    // console.log("✅ Firebase Admin initialized from environment variables.");
     return;
   }
 
-  // If we reach here, neither JSON nor env vars are available — throw a helpful error.
+  // If we reach here, env vars are not available — throw a helpful error.
   throw new Error(
-    `Firebase credentials not found. Place ${FILE_NAME} in project-root/utils/ or set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY env vars.`
+    `Firebase credentials not found. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY env vars.`
   );
 }
 
@@ -55,35 +35,82 @@ initFirebaseAdmin();
 
 /**
  * Sends a data-only FCM message.
- * token: device token
- * body: message body (optional)
- * station: station name (optional)
+ * @param tokens A single device token (string) or an array of device tokens (string[]).
+ * @param body Message body (optional).
  */
 export async function sendNotification(
-  token: string = "PASTE_FCM_DEVICE_TOKEN_HERE",
-  body: string = "New incident reported (default message).",
-  // station: string = "Default Station"
+  tokens: string | string[] = "PASTE_FCM_DEVICE_TOKEN_HERE",
+  body: string = "New incident reported (default message)."
 ) {
-  if (!token || token === "PASTE_FCM_DEVICE_TOKEN_HERE") {
-    console.warn("sendNotification: token is missing or placeholder. Aborting send.");
-    return { success: false, error: "Missing token" };
+  // Validate tokens input
+  if (
+    !tokens ||
+    (Array.isArray(tokens) && tokens.length === 0) ||
+    (typeof tokens === "string" && tokens === "PASTE_FCM_DEVICE_TOKEN_HERE")
+  ) {
+    console.warn("sendNotification: tokens are missing, empty, or placeholder. Aborting send.");
+    return { success: false, error: "Missing or invalid tokens" };
   }
 
-  const message = {
+  // Define the common message payload
+  const messagePayload = {
     data: {
       title: "🚨 New Incident Reported!",
       body,
-      // station,
+      // station, // This was commented out in your original, so I kept it
     },
-    token,
   };
 
   try {
-    const res = await admin.messaging().send(message);
-    console.log("✅ FCM send result:", res);
-    return { success: true, response: res };
+    if (Array.isArray(tokens)) {
+      // --- Handle MULTIPLE tokens (Alternative to multicast) ---
+      // Create an array of promises, one for each token
+      const sendPromises = tokens.map((token) => {
+        const message = {
+          data: messagePayload.data,
+          token: token,
+        };
+        return admin.messaging().send(message);
+      });
+
+      // Use Promise.allSettled to send all, even if some fail
+      const results = await Promise.allSettled(sendPromises);
+
+      let successCount = 0;
+      let failureCount = 0;
+      const responses: Array<{ success: boolean; response?: string; token?: string; error?: unknown }> = [];
+      
+      results.forEach((result, idx) => {
+        if (result.status === "fulfilled") {
+          successCount++;
+          responses.push({ success: true, response: result.value });
+        } else {
+          // 'result.status' is "rejected"
+          failureCount++;
+          const failedToken = tokens[idx];
+          // console.error(`Failed to send to token: ${failedToken}`, result.reason);
+          responses.push({ success: false, token: failedToken, error: result.reason });
+        }
+      });
+      
+      // console.log(`✅ FCM send complete: ${successCount} success, ${failureCount} failure`);
+      return { success: successCount > 0, response: responses };
+
+    } else {
+      // --- Handle SINGLE token ---
+      // Use send for a single token string
+      const message = {
+        data: messagePayload.data,
+        token: tokens, // 'token' (singular)
+      };
+      const res = await admin.messaging().send(message);
+      // console.log("✅ FCM send result (Message ID):", res);
+      return { success: true, response: res }; // 'res' is a string (messageId)
+    }
   } catch (error) {
-    console.error("❌ FCM send error:", error);
+    // This catch block will now mainly catch initialization errors, 
+    // as individual send errors are handled by Promise.allSettled
+    console.error("❌ FCM send error (critical):", error);
     return { success: false, error };
   }
 }
