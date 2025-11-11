@@ -13,11 +13,12 @@ export async function POST(req: NextRequest) {
     const phone_number = formData.get("phone_number");
     const station = formData.get("station");
     const audio_url = formData.get("audio_url");
-    const status = "OPEN";
+    
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const client = Twilio(accountSid, authToken);
-
+    
+    const status = "OPEN";
     const notificationMessage = `New incident reported${issue_type ? " " + issue_type : ""} at ${station}.`;
     const latestDevice = await Device.findOne().sort({ createdAt: -1 });
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       await newIncident.save();
 
       const latestDevice = await Device.findOne().sort({ createdAt: -1 });
-      sendNotification(latestDevice.device_token);
+      sendNotification(latestDevice.device_token, notificationMessage);
 
       const formattedBody = `
       New Incident Report Submitted:
