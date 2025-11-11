@@ -5,7 +5,12 @@ const incidentSchema = new mongoose.Schema(
     issue_type: { type: String, required: true },
     phone_number: { type: String, default: "nill" },
     station: { type: String },
-    audio_url: {type: String},
+    status: {
+      type: String,
+      enum: ["OPEN", "IN-PROGRESS", "ASSIGNED", "RESOLVED", "CLOSED"],
+      default: "OPEN",
+    },
+    audio_url: { type: String },
   },
   { timestamps: true }
 );
