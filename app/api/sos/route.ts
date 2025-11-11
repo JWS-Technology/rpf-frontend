@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
       });
       await newIncident.save();
 
+      const latestDevice = await Device.findOne().sort({ createdAt: -1 });
+      sendNotification(latestDevice.device_token);
+
       const formattedBody = `
       New Incident Report Submitted:
 
