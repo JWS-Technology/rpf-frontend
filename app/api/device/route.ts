@@ -3,61 +3,47 @@ import Device from "@/models/device.model";
 import { NextRequest, NextResponse } from "next/server";
 
 // --- 1. DEFINE YOUR CORS HEADERS ---
-// These headers will be used for both OPTIONS and POST
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Allows all origins
-  'Access-Control-Allow-Methods': 'POST, OPTIONS', // Allows POST and OPTIONS
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization', // Allows these headers
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// --- 2. HANDLE PREFLIGHT (OPTIONS) REQUESTS ---
-// Flutter/browsers will send this first to check if POST is allowed
+// --- 2. ADD THE OPTIONS HANDLER (REQUIRED FOR CORS POST) ---
+// This handles the "preflight" request and stops the 405 error
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, {
-    status: 204, // 204 No Content
+    status: 204,
     headers: corsHeaders,
   });
 }
 
-// --- 3. YOUR EXISTING POST HANDLER (NOW WITH CORS HEADERS) ---
+// --- 3. YOUR EXACT POST FUNCTION (WITH HEADERS ADDED) ---
 export async function POST(req: NextRequest) {
   try {
     await connect();
-    
     const formData = await req.formData();
-    const device_token = formData.get("device_token") as string;
-
-    if (!device_token) {
-      return NextResponse.json(
-        { message: "device_token is required", success: false },
-        { status: 400, headers: corsHeaders } // Add headers
-      );
-    }
-
-    const existingDevice = await Device.findOne({ device_token: device_token });
-
-    if (existingDevice) {
-      console.log("Device token already registered:", device_token);
-      return NextResponse.json(
-        { message: "Device already registered", success: true },
-        { status: 200, headers: corsHeaders } // Add headers
-      );
-    }
-
-    console.log("Registering new device token:", device_token);
-    const newDeviceToken = new Device({ device_token: device_token });
-    await newDeviceToken.save(); // Save to MongoDB
-
+    const device_token = formData.get("device_token");
+    console.log(device_token)
+    const newDeviceToken = new Device({device_token});
+    await newDeviceToken.save();
+    console.log(newDeviceToken.device_token);
     return NextResponse.json(
-      { message: "Device registered successfully", success: true },
-      { status: 200, headers: corsHeaders } // Add headers
+      { message: "message successfully sent", success: true },
+      { 
+        status: 200,
+        headers: corsHeaders // <-- Added headers
+      }
     );
-
   } catch (error) {
-    console.log("Error in /api/device/route.ts:", error);
+    console.log(error);
+    
     return NextResponse.json(
-      { message: "Failed to register device", success: false },
-      { status: 500, headers: corsHeaders } // Add headers
+      { message: "failed in device", success: false },
+      { 
+        status: 200, // You might want to change this to 500 for an error
+        headers: corsHeaders // <-- Added headers
+      }
     );
   }
 }
