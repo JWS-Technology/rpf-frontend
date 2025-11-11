@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
     const device_token = formData.get("device_token");
     console.log(device_token)
     const newDeviceToken = new Device({device_token});
-    console.log(newDeviceToken);
+    await newDeviceToken.save();
+    console.log(newDeviceToken.device_token);
     return NextResponse.json(
       { message: "message successfully sent", success: true },
       { status: 200 }
