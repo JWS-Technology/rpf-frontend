@@ -13,14 +13,19 @@ export async function POST(req: NextRequest) {
     const phone_number = formData.get("phone_number");
     const station = formData.get("station");
     const audio_url = formData.get("audio_url");
-    
+
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const client = Twilio(accountSid, authToken);
     
     const status = "OPEN";
     const notificationMessage = `New incident reported${issue_type ? " " + issue_type : ""} at ${station}.`;
-    const latestDevice = await Device.findOne().sort({ createdAt: -1 });
+    const devices = await Device.find().sort({ createdAt: -1 }).select('device_token');
+    const tokens = devices.map(device => device.device_token);
+    // const latestDevice = await Device.findOne().sort({ createdAt: -1 });
+    // console.log("this is lastest");
+    
+    // console.log(tokens);
 
     let mediaUrlToSend: string[] | undefined = undefined;
     if (typeof audio_url === "string") {
@@ -35,7 +40,7 @@ export async function POST(req: NextRequest) {
       });
       await newIncident.save();
       
-      sendNotification(latestDevice.device_token, notificationMessage);
+      sendNotification(tokens, notificationMessage);
 
       const formattedBody = `
       New Incident Report Submitted:
@@ -78,8 +83,8 @@ export async function POST(req: NextRequest) {
       });
       await newIncident.save();
 
-      const latestDevice = await Device.findOne().sort({ createdAt: -1 });
-      sendNotification(latestDevice.device_token, notificationMessage);
+      // const latestDevice = await Device.findOne().sort({ createdAt: -1 });
+      sendNotification(tokens, notificationMessage);
 
       const formattedBody = `
       New Incident Report Submitted:
