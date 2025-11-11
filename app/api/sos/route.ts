@@ -43,21 +43,21 @@ export async function POST(req: NextRequest) {
       Please take immediate action.
     `;
 
-      const message = await client.messages.create({
-        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        body: formattedBody,
-        // body: "Hello! This is noel sebu.",
-        to: `${process.env.TO_WHATSAPP_NUMBER}`,
-      });
+      // const message = await client.messages.create({
+      //   from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      //   body: formattedBody,
+      //   // body: "Hello! This is noel sebu.",
+      //   to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      // });
       //
 
-      const audioMessage = await client.messages.create({
-        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        // body: formattedBody,
-        // body: "Hello! This is noel sebu.",
-        mediaUrl: mediaUrlToSend,
-        to: `${process.env.TO_WHATSAPP_NUMBER}`,
-      });
+      // const audioMessage = await client.messages.create({
+      //   from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      //   // body: formattedBody,
+      //   // body: "Hello! This is noel sebu.",
+      //   mediaUrl: mediaUrlToSend,
+      //   to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      // });
 
       return NextResponse.json(
         { message: "message successfully sent", success: true },
@@ -87,25 +87,25 @@ export async function POST(req: NextRequest) {
       Please take immediate action.
     `;
 
-      const message = await client.messages.create({
-        from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        body: formattedBody,
-        // body: "Hello! This is noel sebu.",
-        to: `${process.env.TO_WHATSAPP_NUMBER}`,
-      });
+      // const message = await client.messages.create({
+      //   from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      //   body: formattedBody,
+      //   // body: "Hello! This is noel sebu.",
+      //   to: `${process.env.TO_WHATSAPP_NUMBER}`,
+      // });
       // console.log("✅ Message SID:", message.sid);
 
       if (mediaUrlToSend) {
         console.log("sending audio");
         console.log(audio_url);
 
-        const audioMessage = await client.messages.create({
-          from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          // body: formattedBody,
-          // body: "Hello! This is noel sebu.",
-          mediaUrl: mediaUrlToSend,
-          to: `${process.env.TO_WHATSAPP_NUMBER}`,
-        });
+        // const audioMessage = await client.messages.create({
+        //   from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        //   // body: formattedBody,
+        //   // body: "Hello! This is noel sebu.",
+        //   mediaUrl: mediaUrlToSend,
+        //   to: `${process.env.TO_WHATSAPP_NUMBER}`,
+        // });
         // console.log("✅ Message SID:", audioMessage.sid);
       }
     }
