@@ -9,27 +9,41 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    // Replace with your actual user validation logic
-    if (officerId.trim() === "" || phone.trim() === "") {
+    if (!officerId.trim() || !phone.trim()) {
       setError("Please enter Officer ID and Phone Number");
       return;
     }
 
-    // Example: mock user data (you can fetch from Supabase)
-    const user = {
-      id: officerId,
-      phone,
-      role: "officer",
-    };
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ officerId, phone }),
+      });
 
-    // ✅ Store in localStorage for persistence
-    localStorage.setItem("user", JSON.stringify(user));
+      if (!res.ok) {
+        // try reading text first to debug
+        const text = await res.text();
+        console.error("Server returned error:", text);
+        setError("Login failed: " + (text || res.statusText));
+        return;
+      }
 
-    // ✅ Redirect to dashboard
-    router.push("/dashboard");
+      const data = await res.json(); // safe now
+
+      // ✅ Save officer info in localStorage (or sessionStorage)
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // ✅ Redirect to dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error(err);
+      setError("Server error, please try again later.");
+    }
   };
 
   return (
