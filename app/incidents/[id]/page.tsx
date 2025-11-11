@@ -29,11 +29,13 @@ type RawIncident = {
 };
 
 export default function IncidentPage() {
-  const { id: rawId } = useParams();
-  const router = useRouter();
 
-  // decode route id (handles encoded characters)
-  const id = typeof rawId === "string" ? decodeURIComponent(rawId) : rawId;
+  const router = useRouter();
+  const { id: rawId } = useParams();
+
+  // Make sure id is a single string
+  const id = Array.isArray(rawId) ? rawId[0] : rawId ?? "";
+
 
   const [incident, setIncident] = useState<RawIncident | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
