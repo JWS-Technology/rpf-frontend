@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     await connect();
     const incidentList = await Incident.find();
     return NextResponse.json(
-      { message: "message successfully sent", success: true },
+      { message: "message successfully sent", success: true, incidents: incidentList },
       { status: 200 }
     );
   } catch (error) {
