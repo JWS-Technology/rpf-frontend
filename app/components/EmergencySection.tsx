@@ -24,11 +24,20 @@ type EmergencySectionProps = {
 
 // Helper function to get the correct file extension
 const getExtensionFromMimeType = (mimeType: string): string => {
-  if (mimeType.includes("mp4")) return "mp4";
-  if (mimeType.includes("mpeg")) return "mp3";
+  // Prioritize common types
+  if (mimeType.includes("ogg")) return "ogg";
   if (mimeType.includes("webm")) return "webm";
+  if (mimeType.includes("mp4")) return "mp4";
   if (mimeType.includes("aac")) return "aac";
-  return "audio"; // fallback
+  if (mimeType.includes("mpeg")) return "mp3";
+  if (mimeType.includes("ogg")) return "ogg";
+
+  // Fallback: get the part after '/' and before ';'
+  // e.g., "audio/wav;codecs=1" -> "wav"
+  const subType = mimeType.split("/")[1]?.split(";")[0];
+  if (subType) return subType;
+
+  return "audio"; // Your original fallback
 };
 
 export default function EmergencySection({
@@ -65,14 +74,15 @@ export default function EmergencySection({
       // First, try to upload audio if it exists
       if (audioBlob) {
         try {
-          // Dynamically set file extension
-          // const fileExtension = getExtensionFromMimeType(audioBlob.type);
-          // const fileName = `emergency-audio-${Date.now()}.${fileExtension}`;
-          const fileName = `emergency-audio-${Date.now()}.aac`;
+          // =================== FIX IS HERE ===================
+          // Dynamically set file extension based on the blob's actual type
+          const fileExtension = getExtensionFromMimeType(audioBlob.type);
+          const fileName = `emergency-audio-${Date.now()}.${fileExtension}`;
+          // ===================================================
 
-          console.log("Uploading audio to Supabase...");
+          // console.log(`Uploading audio as ${fileName} (MIME type: ${audioBlob.type})`);
           audioUrl = await uploadAudioToSupabase(audioBlob, fileName);
-          console.log("Audio uploaded successfully:", audioUrl);
+          // console.log("Audio uploaded successfully:", audioUrl);
         } catch (uploadError) {
           console.error("Failed to upload audio to Supabase:", uploadError);
           // You could alert the user here that audio failed to upload
@@ -91,9 +101,9 @@ export default function EmergencySection({
       }
 
       // Post data to your own API route
-      console.log("Submitting complaint to /api/sos...");
+      // console.log("Submitting complaint to /api/sos...");
       const res = await axios.post("/api/sos", formData);
-      console.log("Complaint submitted:", res);
+      // console.log("Complaint submitted:", res);
 
       setisLoading(false);
 
@@ -124,11 +134,11 @@ export default function EmergencySection({
     ];
     for (const m of candidates) {
       if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) {
-        console.log("Using MIME type:", m); // Good for debugging
+        // console.log("Using MIME type:", m); // Good for debugging
         return m;
       }
     }
-    console.log("No preferred MIME type supported, using browser default.");
+    // console.log("No preferred MIME type supported, using browser default.");
     return ""; // Let the browser use its default
   };
 
