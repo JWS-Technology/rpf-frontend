@@ -32,12 +32,12 @@ export interface IssueSelectorProps {
 }
 
 const OPTIONS: Option[] = [
-  { issue: 'theft', icon: Lock, title: 'Theft', subtitle: 'चोरी' },
-  { issue: 'harassment', icon: UserX, title: 'Harassment', subtitle: 'उत्पीड़न' },
-  { issue: 'suspicious activity', icon: AlertTriangle, title: 'Suspicious Activity', subtitle: 'संदिग्ध गतिविधि' },
-  { issue: 'lost', icon: Box, title: 'Lost Item', subtitle: 'खोई वस्तु' },
-  { issue: 'security', icon: ShieldOff, title: 'Security Threat', subtitle: 'सुरक्षा खतरा' },
-  { issue: 'other', icon: HelpCircle, title: 'Other', subtitle: 'अन्य' },
+  { issue: 'THEFT', icon: Lock, title: 'THEFT', subtitle: 'திருட்டு' },
+  { issue: 'HARASSMENT', icon: UserX, title: 'HARASSMENT', subtitle: 'துன்புறுத்தல்' },
+  { issue: 'MEDICAL ASSISTANCE', icon: AlertTriangle, title: 'MEDICAL ASSISTANCE', subtitle: 'மருத்துவ உதவி' },
+  { issue: 'LOST ITEM', icon: Box, title: 'LOST ITEM', subtitle: 'இழந்த பொருள்' },
+  { issue: 'SECURITY THREAT', icon: ShieldOff, title: 'SECURITY THREAT', subtitle: 'பாதுகாப்பு அச்சுறுத்தல்' },
+  { issue: 'OTHER', icon: HelpCircle, title: 'OTHER', subtitle: 'மற்றவை' },
 ];
 
 

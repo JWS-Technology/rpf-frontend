@@ -62,7 +62,7 @@ initFirebaseAdmin();
 export async function sendNotification(
   token: string = "PASTE_FCM_DEVICE_TOKEN_HERE",
   body: string = "New incident reported (default message).",
-  station: string = "Default Station"
+  // station: string = "Default Station"
 ) {
   if (!token || token === "PASTE_FCM_DEVICE_TOKEN_HERE") {
     console.warn("sendNotification: token is missing or placeholder. Aborting send.");
@@ -73,7 +73,7 @@ export async function sendNotification(
     data: {
       title: "🚨 New Incident Reported!",
       body,
-      station,
+      // station,
     },
     token,
   };
