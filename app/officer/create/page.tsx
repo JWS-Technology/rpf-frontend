@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 
 export default function CreateOfficerPage() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,13 @@ export default function CreateOfficerPage() {
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
+
+  const roleOptions = [
+    { label: "👮 Officer", value: "Officer" },
+    { label: "🧑‍💼 Admin", value: "Admin" },
+    { label: "🚓 Dispatcher", value: "Dispatcher" },
+  ];
 
   // Generate officerId (Frontend)
   const generateOfficerId = () => {
@@ -21,7 +29,9 @@ export default function CreateOfficerPage() {
     return `OFC-${year}-${random}`;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -60,7 +70,7 @@ export default function CreateOfficerPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <form
         onSubmit={handleSubmit}
         className="bg-white/80 backdrop-blur-lg border border-white/30 p-8 rounded-2xl shadow-xl w-full max-w-md space-y-5 transition-all duration-300"
@@ -89,84 +99,91 @@ export default function CreateOfficerPage() {
         </div>
 
         {/* Phone Number */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Phone Number
-  </label>
-  <input
-    type="text"
-    name="phone_number"
-    placeholder="Enter 10-digit number"
-    value={formData.phone_number}
-    onChange={(e) => {
-      const value = e.target.value.replace(/\D/g, ""); // remove non-digits
-      if (value.length <= 10) {
-        setFormData({ ...formData, phone_number: value });
-      }
-    }}
-    pattern="\d{10}"
-    maxLength={10}
-    inputMode="numeric"
-    className="w-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-               p-3 rounded-lg text-gray-800 outline-none transition-all placeholder-gray-400"
-    required
-  />
-  {formData.phone_number.length > 0 && formData.phone_number.length < 10 && (
-    <p className="text-xs text-red-500 mt-1">
-      Phone number must be exactly 10 digits
-    </p>
-  )}
-</div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Phone Number
+          </label>
+          <input
+            type="text"
+            name="phone_number"
+            placeholder="Enter 10-digit number"
+            value={formData.phone_number}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, "");
+              if (value.length <= 10) {
+                setFormData({ ...formData, phone_number: value });
+              }
+            }}
+            pattern="\d{10}"
+            maxLength={10}
+            inputMode="numeric"
+            className="w-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                     p-3 rounded-lg text-gray-800 outline-none transition-all placeholder-gray-400"
+            required
+          />
+          {formData.phone_number.length > 0 &&
+            formData.phone_number.length < 10 && (
+              <p className="text-xs text-red-500 mt-1">
+                Phone number must be exactly 10 digits
+              </p>
+            )}
+        </div>
 
+        {/* Role Dropdown - Google-style */}
+        <div className="relative">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Role
+          </label>
 
- {/* Role Dropdown */}
-<div className="relative">
-  <label
-    htmlFor="role"
-    className="block text-sm font-semibold text-gray-700 mb-2"
-  >
-    Role
-  </label>
-  <div className="relative">
-    <select
-      id="role"
-      name="role"
-      value={formData.role}
-      onChange={handleChange}
-      className="
-        w-full appearance-none
-        bg-gradient-to-br from-white to-gray-50
-        border border-gray-300
-        text-gray-800
-        rounded-lg
-        py-3 px-4 pr-10
-        shadow-sm
-        focus:outline-none
-        focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-        transition-all duration-200 ease-in-out
-        hover:border-blue-400 hover:shadow-md
-      "
-    >
-      <option value="Officer">👮 Officer</option>
-      <option value="Admin">🧑‍💼 Admin</option>
-      <option value="Dispatcher">🚓 Dispatcher</option>
-    </select>
+          <button
+            type="button"
+            onClick={() => setRoleOpen(!roleOpen)}
+            className="w-full flex justify-between items-center bg-white border border-gray-300 rounded-lg py-3 px-4 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none hover:border-blue-400 transition-all"
+          >
+            <span>
+              {roleOptions.find((r) => r.value === formData.role)?.label ||
+                "Select Role"}
+            </span>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${
+                roleOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
 
-    {/* Dropdown Arrow */}
-    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-      <svg
-        className="w-5 h-5 text-gray-500 transition-colors duration-200 group-focus-within:text-blue-500"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </div>
-  </div>
-</div>
-
-
+          {roleOpen && (
+            <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+              {roleOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, role: option.value });
+                    setRoleOpen(false);
+                  }}
+                  className={`flex justify-between items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-blue-50 transition-colors ${
+                    formData.role === option.value ? "bg-blue-50" : ""
+                  }`}
+                >
+                  <span>{option.label}</span>
+                  {formData.role === option.value && (
+                    <Check className="w-4 h-4 text-blue-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Station */}
         <div>
