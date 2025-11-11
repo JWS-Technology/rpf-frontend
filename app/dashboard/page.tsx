@@ -3,14 +3,32 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import TopBar from "../components/dashboard-componets/TopBar";
 import FilterPanel from "../components/dashboard-componets/FilterPanel";
-import IncidentList, { incidents } from "../components/dashboard-componets/IncidentList";
+import IncidentList from "../components/dashboard-componets/IncidentList";
 import { LayoutGrid, List, Download, ChevronDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
+import { exportIncidentsAsPDF, exportIncidentsAsExcel } from "@/lib/exportIncidents";
+
+type IncidentType = {
+  _id?: string;
+  id?: string; // if you use separate id
+  issue_type?: string;
+  type?: string;
+  description?: string;
+  station?: string;
+  status?: string;
+  officer?: string;
+  date?: string;
+  phone_number?: string;
+  audio_url?: string;
+  createdAt?: string;
+  // add other fields you store
+};
+
 export default function DashboardPage() {
-  const [view, setView] = useState<"grid" | "list">("list");
+  const [view, setView] = useState<"grid" | "list">("grid");
   const [incidentCount, setIncidentCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStation, setSelectedStation] = useState("All Stations");
@@ -25,6 +43,11 @@ export default function DashboardPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  // NEW: fetched incidents
+  const [incidents, setIncidents] = useState<IncidentType[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
   // 🔹 Close dropdown when clicked outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -36,121 +59,151 @@ export default function DashboardPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🔹 Filter logic
-  const filteredIncidents = useMemo(() => {
-    return incidents.filter((i) => {
-      const matchesSearch =
-        i.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.description.toLowerCase().includes(searchQuery.toLowerCase());
+  // FETCH incidents from server
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/incident-list");
+        if (!res.ok) {
+          throw new Error(`Failed to fetch incidents (status ${res.status})`);
+        }
+        const data = await res.json();
+        // Expecting { incidents: [...] } from your GET handler
+        if (mounted) {
+          setIncidents(data.incidents || []);
+        }
+      } catch (err: any) {
+        console.error("Error fetching incidents:", err);
+        if (mounted) setError(err.message || "Unknown error");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
 
-      const matchesStation =
-        (selectedStation === "All Stations" || i.station === selectedStation) &&
-        (filters.station === "All Stations" || i.station === filters.station);
+    // optional: poll every 30s (uncomment if you want automatic refresh)
+    // const id = setInterval(load, 30000);
+    // return () => { mounted = false; clearInterval(id); };
+    return () => { mounted = false; };
+  }, []);
 
-      const matchesType =
-        !filters.type || i.type.toLowerCase() === filters.type.toLowerCase();
-
-      const matchesStatus =
-        filters.status === "All Statuses" ||
-        i.status.toLowerCase() === filters.status.toLowerCase();
-
-      const priorityMap: Record<string, string> = {
-        Panic: "High",
-        Theft: "High",
-        Harassment: "High",
-        Suspicious: "Medium",
-        Lost: "Low",
-        Security: "Low",
-      };
-
-      const matchesPriority =
-        filters.priority === "All Priorities" ||
-        priorityMap[i.type] === filters.priority;
-
-      return (
-        matchesSearch &&
-        matchesStation &&
-        matchesType &&
-        matchesStatus &&
-        matchesPriority
-      );
+  // derive stations list for filter panel (optional)
+  const stations = useMemo(() => {
+    const s = new Set<string>();
+    incidents.forEach((it) => {
+      if (it.station) s.add(it.station);
     });
-  }, [searchQuery, selectedStation, filters]);
+    return ["All Stations", ...Array.from(s)];
+  }, [incidents]);
+
+  // 🔹 Filter logic (same as before but based on fetched incidents)
+  // inside DashboardPage component — replace existing filteredIncidents useMemo
+  // replace existing filteredIncidents useMemo with this improved version
+  const filteredIncidents = useMemo(() => {
+    const q = (searchQuery ?? "").trim().toLowerCase();
+
+    // normalized priority map
+    const priorityMap: Record<string, string> = {
+      panic: "High",
+      theft: "High",
+      harassment: "High",
+      suspicious: "Medium",
+      lost: "Low",
+      security: "Low",
+    };
+
+    // helper normalizer
+    const norm = (v?: any) => (v ?? "").toString().trim();
+
+    return incidents.filter((i) => {
+      const idStr = norm(i.id ?? i._id).toLowerCase();
+      // combine both possible type fields and normalize
+      const typeRaw = (i.type ?? i.issue_type ?? "").toString().trim();
+      const typeStr = typeRaw.toLowerCase();
+      const descStr = norm(i.description).toLowerCase();
+      const stationStr = norm(i.station);
+      const incidentStatus = norm(i.status).toLowerCase();
+
+      // search: if query exists, check id / type / description
+      const matchesSearch = !q || idStr.includes(q) || typeStr.includes(q) || descStr.includes(q);
+
+      // station: respected if selectedStation or filters.station !== "All Stations"
+      const matchesStation =
+        selectedStation === "All Stations" ||
+        (filters.station && filters.station !== "All Stations" && stationStr === filters.station) ||
+        (selectedStation !== "All Stations" && stationStr === selectedStation);
+
+      // TYPE filter:
+      // - if filters.type empty -> allow all
+      // - otherwise accept exact match OR partial contains (so 'lost' matches 'lost' and 'lost item' etc.)
+      const chosenType = (filters.type ?? "").toString().trim().toLowerCase();
+      const matchesType =
+        !chosenType ||
+        typeStr === chosenType ||
+        typeStr.includes(chosenType) ||
+        // if the incident has other fields that include type words, you can extend here
+        false;
+
+      // STATUS filter: support "All Statuses" and case-insensitive equality
+      const chosenStatus = (filters.status ?? "").toString().trim().toLowerCase();
+      const matchesStatus =
+        !chosenStatus ||
+        chosenStatus === "all statuses" ||
+        incidentStatus === chosenStatus ||
+        // also accept human-friendly variations (e.g., "in progress" vs "in-progress")
+        (incidentStatus.replace(/\s+/g, "-") === chosenStatus.replace(/\s+/g, "-"));
+
+      // PRIORITY filter: map incident type -> priority; allow All Priorities
+      const incidentPriority = (priorityMap[typeStr] ?? "Low").toString().toLowerCase();
+      const chosenPriority = (filters.priority ?? "").toString().trim().toLowerCase();
+      const matchesPriority =
+        !chosenPriority ||
+        chosenPriority === "all priorities" ||
+        incidentPriority === chosenPriority;
+
+      // final
+      const keep = matchesSearch && matchesStation && matchesType && matchesStatus && matchesPriority;
+
+      // debug (uncomment when troubleshooting a specific case)
+      // console.debug("filter check:", { id: i.id ?? i._id, typeRaw, typeStr, chosenType, matchesType, incidentStatus, chosenStatus, incidentPriority, chosenPriority, keep });
+
+      return keep;
+    });
+  }, [incidents, searchQuery, selectedStation, filters]);
+
+  // keep incidentCount sync with filteredIncidents (or total incidents)
+  useEffect(() => {
+    setIncidentCount(filteredIncidents.length);
+  }, [filteredIncidents]);
 
   // 🔹 Status Summary
   const statusSummary = useMemo(() => {
     const summary: Record<string, number> = {};
     filteredIncidents.forEach((incident) => {
-      const status = incident.status.toUpperCase();
+      const status = (incident.status || "UNKNOWN").toUpperCase();
       summary[status] = (summary[status] || 0) + 1;
     });
     return summary;
   }, [filteredIncidents]);
 
-  // 🔹 Export PDF
-  const handleExportPDF = () => {
-    const doc = new jsPDF("p", "pt");
-    doc.setFontSize(18);
-    doc.setTextColor("#0b2c64");
-    doc.text("Incident Report", 40, 40);
 
-    doc.setFontSize(11);
-    doc.text(`Total Incidents: ${filteredIncidents.length}`, 40, 60);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 40, 80);
-
-    const tableColumn = ["ID", "Type", "Station", "Status", "Officer", "Date"];
-    const tableRows = filteredIncidents.map((i) => [
-      i.id,
-      i.type,
-      i.station,
-      i.status,
-      i.officer || "-",
-      i.date,
-    ]);
-
-    autoTable(doc, {
-      startY: 100,
-      head: [tableColumn],
-      body: tableRows,
-    });
-
-    doc.save("Incidents_Report.pdf");
-  };
-
-  // 🔹 Export Excel
-  const handleExportExcel = () => {
-    const worksheetData = filteredIncidents.map((i) => ({
-      ID: i.id,
-      Type: i.type,
-      Station: i.station,
-      Status: i.status,
-      Officer: i.officer || "-",
-      Date: i.date,
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Incidents");
-    XLSX.writeFile(workbook, "Incidents_Report.xlsx");
-  };
 
   return (
     <div className="bg-[#f5f8fa] min-h-screen overflow-x-hidden">
-      <TopBar onSearch={setSearchQuery} onStationSelect={setSelectedStation} />
+      <TopBar onSearch={setSearchQuery} onStationSelect={(s) => setSelectedStation(s)} />
 
       {/* ===== Header Section ===== */}
       <div className="px-4 sm:px-6 md:px-10 py-4 border-b border-gray-200 bg-[#f5f8fa]">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex flex-col lg:flex-row lg:items-center gap-5 flex-wrap">
             <div>
-              <h1 className="text-2xl font-bold text-[#0b2c64]">
-                All Incidents
-              </h1>
-              {/* <p className="text-sm text-[#4a5a73] mt-1">
-                Showing {incidentCount}{" "}
-                {incidentCount === 1 ? "incident" : "incidents"}
-              </p> */}
+              <h1 className="text-2xl font-bold text-[#0b2c64]">All Incidents</h1>
+              <p className="text-sm text-[#4a5a73] mt-1">
+                Showing {incidentCount} {incidentCount === 1 ? "incident" : "incidents"}
+              </p>
             </div>
 
             {/* Status Summary */}
@@ -192,9 +245,7 @@ export default function DashboardPage() {
               Export
               <ChevronDown
                 size={16}
-                className={`ml-1 transition-transform ${
-                  exportOpen ? "rotate-180" : ""
-                }`}
+                className={`ml-1 transition-transform ${exportOpen ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -204,7 +255,7 @@ export default function DashboardPage() {
                 <ul className="text-sm text-gray-700">
                   <li
                     onClick={() => {
-                      handleExportPDF();
+                      exportIncidentsAsPDF(filteredIncidents as any[]); // cast if necessary
                       setExportOpen(false);
                     }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer rounded-t-md"
@@ -213,7 +264,7 @@ export default function DashboardPage() {
                   </li>
                   <li
                     onClick={() => {
-                      handleExportExcel();
+                      exportIncidentsAsExcel(filteredIncidents as any[]);
                       setExportOpen(false);
                     }}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer rounded-b-md"
@@ -226,22 +277,20 @@ export default function DashboardPage() {
 
             <button
               onClick={() => setView("grid")}
-              className={`p-3 rounded-xl shadow-md transition ${
-                view === "grid"
-                  ? "bg-[#0b2c64] text-white hover:bg-[#09305f]"
-                  : "bg-white border border-gray-200 text-[#0b2c64] hover:bg-gray-50"
-              }`}
+              className={`p-3 rounded-xl shadow-md transition ${view === "grid"
+                ? "bg-[#0b2c64] text-white hover:bg-[#09305f]"
+                : "bg-white border border-gray-200 text-[#0b2c64] hover:bg-gray-50"
+                }`}
             >
               <LayoutGrid size={18} />
             </button>
 
             <button
               onClick={() => setView("list")}
-              className={`p-3 rounded-xl shadow-md transition ${
-                view === "list"
-                  ? "bg-[#0b2c64] text-white hover:bg-[#09305f]"
-                  : "bg-white border border-gray-200 text-[#0b2c64] hover:bg-gray-50"
-              }`}
+              className={`p-3 rounded-xl shadow-md transition ${view === "list"
+                ? "bg-[#0b2c64] text-white hover:bg-[#09305f]"
+                : "bg-white border border-gray-200 text-[#0b2c64] hover:bg-gray-50"
+                }`}
             >
               <List size={18} />
             </button>
@@ -250,22 +299,60 @@ export default function DashboardPage() {
       </div>
 
       {/* ===== Main Content ===== */}
+      {/* ===== Main Content ===== */}
       <div className="px-4 sm:px-6 md:px-10 py-6 flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto">
         <div className="w-full lg:w-72 shrink-0">
           <FilterPanel
             filters={filters}
             onChange={(updated) => setFilters((prev) => ({ ...prev, ...updated }))}
+            stations={stations}
           />
         </div>
 
         <section className="flex-1 ml-2">
-          <IncidentList
-            view={view}
-            onDataLoaded={setIncidentCount}
-            incidentsData={filteredIncidents}
-          />
+          {loading ? (
+            <div className="p-8 text-center text-gray-600">Loading incidents…</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-600">Error: {error}</div>
+          ) : filteredIncidents.length === 0 ? (
+            <div className="p-10 text-center border border-dashed border-gray-200 rounded-lg bg-white shadow-sm">
+              <p className="text-lg font-semibold text-[#0b2c64] mb-2">
+                No records found{filters.type ? ` for "${filters.type}"` : ""}.
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                Try clearing filters or change your search to see results.
+              </p>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() =>
+                    setFilters({
+                      station: "All Stations",
+                      priority: "All Priorities",
+                      status: "All Statuses",
+                      type: "",
+                      time: "Last 24 hours",
+                    })
+                  }
+                  className="px-4 py-2 bg-[#0b2c64] text-white rounded-md hover:bg-[#09305f] transition"
+                >
+                  Reset filters
+                </button>
+
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="px-4 py-2 border rounded-md text-[#0b2c64] hover:bg-gray-50 transition"
+                >
+                  Clear search
+                </button>
+              </div>
+            </div>
+          ) : (
+            <IncidentList view={view} onDataLoaded={setIncidentCount} incidentsData={filteredIncidents} />
+          )}
         </section>
       </div>
+
     </div>
   );
 }
