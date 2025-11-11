@@ -28,10 +28,8 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
 
   const stations = [
     "All Stations",
-    "Coimbatore Junction",
-    "Chennai Central",
-    "New Delhi",
-    "Howrah Junction",
+    "Srirangam",
+    "Trichy Centeral Junction"
   ];
 
   // Close dropdown when clicking outside
@@ -106,9 +104,8 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
               <span className="truncate">{station}</span>
               <ChevronDown
                 size={16}
-                className={`ml-2 text-[#0b2c64] transition-transform duration-200 ${
-                  menuOpen ? "rotate-180" : ""
-                }`}
+                className={`ml-2 text-[#0b2c64] transition-transform duration-200 ${menuOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -119,11 +116,10 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
                     <li
                       key={s}
                       onClick={() => handleStationChange(s)}
-                      className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-md mx-1 transition ${
-                        station === s
-                          ? "bg-blue-100 text-[#0b2c64] font-medium"
-                          : "hover:bg-gray-100"
-                      }`}
+                      className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-md mx-1 transition ${station === s
+                        ? "bg-blue-100 text-[#0b2c64] font-medium"
+                        : "hover:bg-gray-100"
+                        }`}
                     >
                       <span>{s}</span>
                       {station === s && (
