@@ -8,6 +8,6 @@ const deviceSchema = new mongoose.Schema(
 );
 
 const Device =
-  mongoose.models.Device || mongoose.model("Incident", deviceSchema);
+  mongoose.models.Device || mongoose.model("Device", deviceSchema);
 
 export default Device;
