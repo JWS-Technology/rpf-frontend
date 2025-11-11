@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
     await connect();
     const formData = await req.formData();
     const device_token = formData.get("device_token");
+    console.log(device_token)
     const newDeviceToken = new Device({device_token});
     console.log(newDeviceToken);
     return NextResponse.json(
