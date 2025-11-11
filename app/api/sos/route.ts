@@ -87,6 +87,10 @@ export async function POST(req: NextRequest) {
       // console.log("✅ Message SID:", message.sid);
 
       if (mediaUrlToSend) {
+        console.log("sending audio");
+        console.log(audio_url);
+        
+        
         const audioMessage = await client.messages.create({
           from: `${process.env.TWILIO_WHATSAPP_NUMBER}`,
           // body: formattedBody,
