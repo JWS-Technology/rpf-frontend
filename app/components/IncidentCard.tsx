@@ -11,6 +11,7 @@ interface IncidentProps {
     station: string;
     date: string;
     status: string;
+    phone_number?: string | null;
     officer?: string;
     slaBreach?: boolean;
   };
@@ -53,9 +54,17 @@ export default function IncidentCard({ incident }: IncidentProps) {
           <p className="text-[15px] text-[#0b2c64] font-semibold">
             {incident.type}
           </p>
-          <p className="text-sm text-[#4a5a73] mt-1 leading-snug line-clamp-2">
-            {incident.description}
-          </p>
+          {incident.phone_number && incident.phone_number !== "nill" && incident.phone_number !== "nil" && incident.phone_number.trim() !== "" ? (
+            <a
+              className="text-sm text-[#4a5a73] mt-1 leading-snug line-clamp-2"
+              href={`tel:+91${incident.phone_number}`}
+            >
+              +91 {incident.phone_number}
+            </a>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1 leading-snug">No phone number</p>
+          )}
+
         </div>
 
         <div className="flex flex-col justify-center text-sm text-[#64748b] gap-1">
@@ -76,19 +85,15 @@ export default function IncidentCard({ incident }: IncidentProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mt-auto pt-3">
+      <div className="grid grid-cols-1 gap-3 mt-auto pt-3">
         <button
-  onClick={() => router.push(`/incidents/${incident.id}`)}
-  className="bg-[#e8effc] text-[#0b2c64] py-2 rounded-xl font-medium text-sm hover:bg-[#dbe6fb] transition"
->
-  View Details
-</button>
-        {(incident.status === "OPEN" || incident.status === "ACKNOWLEDGED") && (
-          <button className="bg-[#0b2c64] text-white py-2 rounded-xl font-medium text-sm hover:bg-[#092659] transition">
-            Assign
-          </button>
-        )}
+          onClick={() => router.push(`/incidents/${incident.id}`)}
+          className="bg-[#0b2c64] text-white py-2 rounded-xl font-medium text-sm hover:bg-[#092659] transition"
+        >
+          View Details
+        </button>
+
       </div>
-    </div>
+    </div >
   );
 }
