@@ -52,10 +52,17 @@ export async function sendNotification(
     return { success: false, error: "Missing or invalid tokens" };
   }
 
+  const title = "🚨 New Incident Reported!";
+
   // Define the common message configuration, including priority
   const commonMessageConfig = {
+    // This 'notification' block is what wakes the screen
+    notification: {
+      title: title,
+      body: body,
+    },
     data: {
-      title: "🚨 New Incident Reported!",
+      title: title,
       body,
       // station,
     },
@@ -73,6 +80,7 @@ export async function sendNotification(
           // This flag is important for data-only messages on iOS
           // to wake your app in the background.
           "content-available": 1,
+          sound: "default", // Adds sound for the visible iOS notification
         },
       },
     },
