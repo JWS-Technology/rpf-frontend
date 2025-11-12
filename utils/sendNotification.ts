@@ -52,22 +52,40 @@ export async function sendNotification(
     return { success: false, error: "Missing or invalid tokens" };
   }
 
-  // Define the common message payload
-  const messagePayload = {
+  // Define the common message configuration, including priority
+  const commonMessageConfig = {
     data: {
       title: "🚨 New Incident Reported!",
       body,
-      // station, // This was commented out in your original, so I kept it
+      // station,
+    },
+    // Add this block for Android high priority
+    android: {
+      priority: "high" as const,
+    },
+    // Add this block for iOS (APNs) high priority
+    apns: {
+      headers: {
+        "apns-priority": "10", // Sets high priority for APNs
+      },
+      payload: {
+        aps: {
+          // This flag is important for data-only messages on iOS
+          // to wake your app in the background.
+          "content-available": 1,
+        },
+      },
     },
   };
 
   try {
     if (Array.isArray(tokens)) {
-      // --- Handle MULTIPLE tokens (Alternative to multicast) ---
+      // --- Handle MULTIPLE tokens ---
       // Create an array of promises, one for each token
       const sendPromises = tokens.map((token) => {
+        // Spread the common config and add the specific token
         const message = {
-          data: messagePayload.data,
+          ...commonMessageConfig,
           token: token,
         };
         return admin.messaging().send(message);
@@ -79,7 +97,7 @@ export async function sendNotification(
       let successCount = 0;
       let failureCount = 0;
       const responses: Array<{ success: boolean; response?: string; token?: string; error?: unknown }> = [];
-      
+
       results.forEach((result, idx) => {
         if (result.status === "fulfilled") {
           successCount++;
@@ -92,15 +110,15 @@ export async function sendNotification(
           responses.push({ success: false, token: failedToken, error: result.reason });
         }
       });
-      
+
       // console.log(`✅ FCM send complete: ${successCount} success, ${failureCount} failure`);
       return { success: successCount > 0, response: responses };
 
     } else {
       // --- Handle SINGLE token ---
-      // Use send for a single token string
+      // Spread the common config and add the specific token
       const message = {
-        data: messagePayload.data,
+        ...commonMessageConfig,
         token: tokens, // 'token' (singular)
       };
       const res = await admin.messaging().send(message);
@@ -108,7 +126,7 @@ export async function sendNotification(
       return { success: true, response: res }; // 'res' is a string (messageId)
     }
   } catch (error) {
-    // This catch block will now mainly catch initialization errors, 
+    // This catch block will now mainly catch initialization errors,
     // as individual send errors are handled by Promise.allSettled
     console.error("❌ FCM send error (critical):", error);
     return { success: false, error };
