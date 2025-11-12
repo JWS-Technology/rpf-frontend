@@ -9,7 +9,6 @@ import admin from "firebase-admin";
 function initFirebaseAdmin() {
   if (admin.apps.length) return;
 
-  // 1) Load from env vars (suitable for Vercel / production)
   const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
 
   if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
@@ -17,15 +16,12 @@ function initFirebaseAdmin() {
       credential: admin.credential.cert({
         projectId: FIREBASE_PROJECT_ID,
         clientEmail: FIREBASE_CLIENT_EMAIL,
-        // replace literal \n into newlines if stored that way
         privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
       }),
     });
-    // console.log("✅ Firebase Admin initialized from environment variables.");
     return;
   }
 
-  // If we reach here, env vars are not available — throw a helpful error.
   throw new Error(
     `Firebase credentials not found. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY env vars.`
   );
@@ -34,15 +30,24 @@ function initFirebaseAdmin() {
 initFirebaseAdmin();
 
 /**
- * Sends a data-only FCM message.
- * @param tokens A single device token (string) or an array of device tokens (string[]).
- * @param body Message body (optional).
+ * Sends an FCM message.
+ * - For heads-up on Android, server should set `android.notification.channelId` to a high-importance channel that exists on the device.
+ * - For visible alerts on iOS, include `apns.headers['apns-push-type']='alert'` and `aps.alert` in payload.
+ *
+ * @param tokens string | string[]  single device token or array of device tokens
+ * @param body string message body
+ * @param options optional settings: title, channelId, data, apnsContentAvailable (boolean)
  */
 export async function sendNotification(
   tokens: string | string[] = "PASTE_FCM_DEVICE_TOKEN_HERE",
-  body: string = "New incident reported (default message)."
+  body: string = "New incident reported (default message).",
+  options?: {
+    title?: string;
+    channelId?: string; // Android channelId (must be created on the device with high importance)
+    data?: Record<string, string>;
+    apnsContentAvailable?: boolean; // if true, keeps content-available:1 for background processing
+  }
 ) {
-  // Validate tokens input
   if (
     !tokens ||
     (Array.isArray(tokens) && tokens.length === 0) ||
@@ -52,35 +57,44 @@ export async function sendNotification(
     return { success: false, error: "Missing or invalid tokens" };
   }
 
-  const title = "🚨 New Incident Reported!";
+  const title = options?.title ?? "🚨 New Incident Reported!";
+  const channelId = options?.channelId ?? "alerts_high"; // sensible default; device must create this channel
+  const extraData = options?.data ?? {};
+  const apnsContentAvailable = !!options?.apnsContentAvailable;
 
-  // Define the common message configuration, including priority
-  const commonMessageConfig = {
-    // This 'notification' block is what wakes the screen
+  const commonMessageConfig: Partial<admin.messaging.Message> = {
     notification: {
-      title: title,
-      body: body,
+      title,
+      body,
     },
     data: {
-      title: title,
+      title,
       body,
-      // station,
+      ...extraData,
     },
-    // Add this block for Android high priority
     android: {
-      priority: "high" as const,
+      priority: "high",
+      notification: {
+        channelId,
+        sound: "default",
+        // visibility and defaults that help heads-up behavior
+        visibility: "public",
+        defaultSound: true,
+      },
     },
-    // Add this block for iOS (APNs) high priority
     apns: {
       headers: {
-        "apns-priority": "10", // Sets high priority for APNs
+        "apns-priority": "10",
+        "apns-push-type": "alert", // required on newer iOS
       },
       payload: {
         aps: {
-          // This flag is important for data-only messages on iOS
-          // to wake your app in the background.
-          "content-available": 1,
-          sound: "default", // Adds sound for the visible iOS notification
+          alert: { title, body },
+          sound: "default",
+          // Optional: interruption-level can help (iOS 15+)
+          // "interruption-level": "time-sensitive",
+          // include content-available only if you need background processing
+          ...(apnsContentAvailable ? { "content-available": 1 } : {}),
         },
       },
     },
@@ -88,18 +102,14 @@ export async function sendNotification(
 
   try {
     if (Array.isArray(tokens)) {
-      // --- Handle MULTIPLE tokens ---
-      // Create an array of promises, one for each token
       const sendPromises = tokens.map((token) => {
-        // Spread the common config and add the specific token
         const message = {
           ...commonMessageConfig,
-          token: token,
+          token,
         };
         return admin.messaging().send(message);
       });
 
-      // Use Promise.allSettled to send all, even if some fail
       const results = await Promise.allSettled(sendPromises);
 
       let successCount = 0;
@@ -109,33 +119,23 @@ export async function sendNotification(
       results.forEach((result, idx) => {
         if (result.status === "fulfilled") {
           successCount++;
-          responses.push({ success: true, response: result.value });
+          responses.push({ success: true, response: result.value, token: tokens[idx] });
         } else {
-          // 'result.status' is "rejected"
           failureCount++;
-          const failedToken = tokens[idx];
-          // console.error(`Failed to send to token: ${failedToken}`, result.reason);
-          responses.push({ success: false, token: failedToken, error: result.reason });
+          responses.push({ success: false, token: tokens[idx], error: result.reason });
         }
       });
 
-      // console.log(`✅ FCM send complete: ${successCount} success, ${failureCount} failure`);
       return { success: successCount > 0, response: responses };
-
     } else {
-      // --- Handle SINGLE token ---
-      // Spread the common config and add the specific token
       const message = {
         ...commonMessageConfig,
-        token: tokens, // 'token' (singular)
+        token: tokens,
       };
       const res = await admin.messaging().send(message);
-      // console.log("✅ FCM send result (Message ID):", res);
-      return { success: true, response: res }; // 'res' is a string (messageId)
+      return { success: true, response: res };
     }
   } catch (error) {
-    // This catch block will now mainly catch initialization errors,
-    // as individual send errors are handled by Promise.allSettled
     console.error("❌ FCM send error (critical):", error);
     return { success: false, error };
   }
