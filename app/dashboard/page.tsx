@@ -5,10 +5,7 @@ import TopBar from "../components/dashboard-componets/TopBar";
 import FilterPanel from "../components/dashboard-componets/FilterPanel";
 import IncidentList from "../components/dashboard-componets/IncidentList";
 import { LayoutGrid, List, Download, ChevronDown } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-
+import { useRouter } from "next/navigation";
 import { exportIncidentsAsPDF, exportIncidentsAsExcel } from "@/lib/exportIncidents";
 
 type IncidentType = {
@@ -39,7 +36,7 @@ export default function DashboardPage() {
     type: "",
     time: "Last 24 hours",
   });
-
+  const router = useRouter();
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +46,26 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   // 🔹 Close dropdown when clicked outside
+
+  // ✅ Security Layer
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      // Only allow role Officer
+      if (!user.role || user.role !== "Officer") {
+        router.replace("/login");
+      }
+    } catch (err) {
+      console.error("Invalid user data:", err);
+      router.replace("/login");
+    }
+  }, [router]);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (exportRef.current && !exportRef.current.contains(e.target as Node)) {

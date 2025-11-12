@@ -8,10 +8,9 @@ import {
   LogOut,
   ChevronDown,
   Check,
-  Menu,
-  X,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface TopBarProps {
   onSearch: (query: string) => void;
@@ -19,44 +18,47 @@ interface TopBarProps {
 }
 
 export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
+  const router = useRouter();
   const [station, setStation] = useState("All Stations");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [mobileDropdown, setMobileDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
 
-  const stations = [
-    "All Stations",
-    "Srirangam",
-    "Trichy Centeral Junction"
-  ];
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
+
+  const stations = ["All Stations", "Srirangam", "Trichy Central Junction"];
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
-        setMobileDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle station selection
   const handleStationChange = (selectedStation: string) => {
     setStation(selectedStation);
     setMenuOpen(false);
-    setMobileDropdown(false);
     onStationSelect(selectedStation);
   };
 
-  // Handle search input
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
     onSearch(value);
+  };
+
+  // ✅ Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.replace("/login");
   };
 
   return (
@@ -76,13 +78,11 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
             <h1 className="font-semibold text-[#0b2c64] text-base sm:text-lg">
               RPF Operations Portal
             </h1>
-            <p className="text-xs text-gray-500 -mt-1">
-              Railway Protection Force
-            </p>
+            <p className="text-xs text-gray-500 -mt-1">Railway Protection Force</p>
           </div>
         </div>
 
-        {/* CENTER — Search + Dropdown (Desktop only) */}
+        {/* CENTER — Search + Dropdown */}
         <div className="hidden md:flex flex-1 justify-center items-center gap-3">
           <div className="flex items-center bg-[#f2f5f8] rounded-lg px-3 py-2 w-full max-w-md border border-gray-200">
             <Search size={18} className="text-gray-500 mr-2" />
@@ -95,7 +95,6 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
             />
           </div>
 
-          {/* Dropdown (Desktop) */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -117,14 +116,12 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
                       key={s}
                       onClick={() => handleStationChange(s)}
                       className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-md mx-1 transition ${station === s
-                        ? "bg-blue-100 text-[#0b2c64] font-medium"
-                        : "hover:bg-gray-100"
+                          ? "bg-blue-100 text-[#0b2c64] font-medium"
+                          : "hover:bg-gray-100"
                         }`}
                     >
                       <span>{s}</span>
-                      {station === s && (
-                        <Check className="w-4 h-4 text-[#0b2c64]" />
-                      )}
+                      {station === s && <Check className="w-4 h-4 text-[#0b2c64]" />}
                     </li>
                   ))}
                 </ul>
@@ -135,22 +132,27 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
 
         {/* RIGHT — Icons */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="relative">
-            <Bell className="text-gray-600 w-5 h-5 cursor-pointer" />
+          <Bell className="text-gray-600 w-5 h-5 cursor-pointer relative">
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
               3
             </span>
-          </div>
+          </Bell>
 
           <div className="hidden sm:flex flex-col text-right">
             <span className="text-sm font-semibold text-[#0b2c64]">
-              Officer Kumar
+              {user?.name || "Officer"}
             </span>
-            <span className="text-xs text-gray-500">Control Room Operator</span>
+            <span className="text-xs text-gray-500">
+              {user?.role || "Control Room Operator"}
+            </span>
           </div>
 
           <User className="text-gray-700 w-5 h-5 cursor-pointer" />
-          <LogOut className="text-gray-700 w-5 h-5 cursor-pointer" />
+          {/* 🔹 Logout button */}
+          <LogOut
+            className="text-gray-700 w-5 h-5 cursor-pointer"
+            onClick={handleLogout}
+          />
         </div>
       </div>
     </header>
