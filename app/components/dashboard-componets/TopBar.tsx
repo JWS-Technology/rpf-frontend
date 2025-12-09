@@ -166,7 +166,7 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
           </div>
 
 
-          <div className="hidden sm:flex flex-col text-right">
+          {/* <div className="hidden sm:flex flex-col text-right">
             <span className="text-sm font-semibold text-[#0b2c64]">
               {user?.name || "Officer"}
             </span>
@@ -176,11 +176,10 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
           </div>
 
           <User className="text-gray-700 w-5 h-5 cursor-pointer" />
-          {/* 🔹 Logout button */}
           <LogOut
             className="text-gray-700 w-5 h-5 cursor-pointer"
             onClick={handleLogout}
-          />
+          /> */}
         </div>
       </div>
     </header>
