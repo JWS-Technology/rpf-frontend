@@ -27,6 +27,7 @@ type IncidentType = {
 export default function DashboardPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [incidentCount, setIncidentCount] = useState<number>(0);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStation, setSelectedStation] = useState("All Stations");
   const [filters, setFilters] = useState({

@@ -10,6 +10,8 @@ import AddNote from "../../components/incidents/AddNote";
 import ActionsPanel from "../../components/incidents/ActionsPanel";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import axios from "axios";
+
 
 type RawIncident = {
   _id?: string;
@@ -41,6 +43,11 @@ export default function IncidentPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // NEW: states to capture Duty Staff and Action Time (as strings)
+  const [dutyStaff, setDutyStaff] = useState<string>("");
+  const [actionTime, setActionTime] = useState<string>(""); // ISO or datetime-local value
+  const [timetaken, settimetaken] = useState("");
+
   // timer ref to delay showing "not found"
   const notFoundTimeoutRef = useRef<number | null>(null);
   const NOT_FOUND_DELAY_MS = 500; // adjust if you want shorter/longer
@@ -70,6 +77,34 @@ export default function IncidentPage() {
       notFoundTimeoutRef.current = null;
     }
   };
+
+  useEffect(() => {
+    const setState = () => {
+      if (!incident?.officer) return;
+      if (!incident?.action_time) return;
+      setDutyStaff(incident?.officer)
+      settimetaken(incident?.action_time)
+    }
+    setState();
+  }, [incident?.officer, incident?.action_time])
+
+
+  const updateStaffAndTime = async () => {
+    if (!id) return;
+    try {
+      const res = await axios.patch(`/api/incident/${id}/staff-and-time`, {
+        incidentId: id,
+        dutyStaff: dutyStaff,
+        action_time: timetaken,
+      });
+      console.log(res)
+    } catch (error) {
+      console.log("erron on trying to update staff and time")
+      console.log(error)
+    } finally {
+      window.location.reload();
+    }
+  }
 
   const fetchIncident = useCallback(
     async (opts?: { signal?: AbortSignal }) => {
@@ -142,6 +177,8 @@ export default function IncidentPage() {
         // If found, clear any pending not-found timer and update state
         clearNotFoundTimer();
         if (doc) {
+          console.log(doc.timetaken)
+          console.log(doc.action_time)
           const normalized: RawIncident = {
             ...doc,
             id: doc.id ?? doc.incidentId ?? doc._id ?? doc.id,
@@ -149,10 +186,12 @@ export default function IncidentPage() {
             station: doc.station ?? "",
             status: (doc.status ?? "").toString(),
             officer: doc.officer ?? "",
+            action_time: doc.action_time ?? "",
             date: doc.date ?? doc.createdAt ?? "",
             createdAt: doc.createdAt ?? doc.createdAt,
             phone_number: cleanPhone(doc.phone_number ?? doc.phone ?? doc.phoneNumber ?? null),
             audio_url: doc.audio_url ?? doc.audioUrl ?? "",
+            timetaken: doc.action_time ?? "",
           };
 
           setIncident(normalized);
@@ -250,6 +289,26 @@ export default function IncidentPage() {
     );
   };
 
+  // Handler to save form values into state (keeps everything client-side)
+  const handleSaveDuty = (e: React.FormEvent) => {
+    e.preventDefault();
+    // actionTime expected as datetime-local value (e.g. "2025-12-09T10:00")
+    // Convert to ISO string for consistency when storing, but keep the raw value if conversion fails
+    if (actionTime) {
+      const parsed = new Date(actionTime);
+      if (!isNaN(parsed.getTime())) {
+        setActionTime(parsed.toISOString());
+      } else {
+        // keep as-is
+        setActionTime(actionTime);
+      }
+    } else {
+      setActionTime("");
+    }
+    // dutyStaff already bound to input via onChange; nothing else needed
+    // Optionally you can show a small toast — omitted to avoid touching other UI
+  };
+
   return (
     <div className="min-h-screen bg-[#f1f6f9] text-[#0b2c64]">
       <main className="max-w-7xl mx-auto px-6 pb-12">
@@ -331,6 +390,59 @@ export default function IncidentPage() {
             <div className="bg-white border border-[#e6edf3] rounded-xl shadow-sm p-5 sticky top-6">
               <div className="bg-white rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-[#0b2c64] mb-4">Actions</h3>
+
+                {/* NEW: Form to capture Duty Staff Name and Action Time.
+                    Only stores values into component state (dutyStaff, actionTime).
+                    No other logic changed. */}
+                <form onSubmit={handleSaveDuty} className="mb-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Duty Staff Name</label>
+                    <input
+                      type="text"
+                      value={dutyStaff}
+                      onChange={(e) => setDutyStaff(e.target.value)}
+                      placeholder="Enter duty staff name"
+                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0b2c64]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Action Time (in minutes)</label>
+                    <input
+                      // using datetime-local for user-friendly pick; stored as ISO on save
+                      type="text"
+                      placeholder="time in minutes"
+                      value={timetaken}
+                      onChange={(e) => settimetaken(e.target.value)}
+                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0b2c64]"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      onClick={() => updateStaffAndTime()}
+                      className="px-3 py-2 bg-[#0b2c64] text-white rounded-md text-sm"
+                    >
+                      Save
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // clear inputs (local only)
+                        setDutyStaff("");
+                        settimetaken("");
+                      }}
+                      className="px-3 py-2 border rounded-md text-sm"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  {/* small status display to confirm current state values (optional, harmless) */}
+                </form>
+
                 {loading ? (
                   <div className="text-sm text-gray-500">Loading…</div>
                 ) : incident ? (
