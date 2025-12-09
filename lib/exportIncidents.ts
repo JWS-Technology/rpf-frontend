@@ -28,6 +28,9 @@ export type IncidentForExport = {
   officer?: string | null;
   date?: string | null;
   createdAt?: string | null;
+  action_time?: string | null; // legacy
+  timetaken?: string | null; // prefer this for "minutes" string
+  // staff removed
 };
 
 export async function exportIncidentsAsPDF(
@@ -65,7 +68,6 @@ export async function exportIncidentsAsPDF(
       dayKey = "unknown";
     } else {
       // use local date portion in YYYY-MM-DD to group by day
-      // create an ISO-like YYYY-MM-DD from the date in local timezone
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
@@ -125,8 +127,7 @@ export async function exportIncidentsAsPDF(
             year: "numeric",
           });
 
-    // Place the day title on the right side of header (as user requested "date as tile in one side")
-    // We'll draw the page title left, and date badge on the right
+    // Place the day title on the right side of header
     doc.setFontSize(14);
     doc.text(title, 120, 75);
 
@@ -138,16 +139,14 @@ export async function exportIncidentsAsPDF(
     const tileY = 40;
     const tileHeight = 28;
 
-    // Draw rounded rect for tile (light background)
     doc.setDrawColor(11, 44, 100);
     doc.setFillColor(240, 245, 255);
-    // rounded rect: using rect + manual rounding via bezier is complex; use rect for simplicity
     doc.rect(tileX, tileY, tileWidth, tileHeight, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor("#0b2c64");
-    doc.text(tileText, tileX + 9, tileY + 18); // small padding inside tile
+    doc.text(tileText, tileX + 9, tileY + 18);
 
     doc.setFontSize(10);
     doc.setTextColor("#666666");
@@ -164,10 +163,26 @@ export async function exportIncidentsAsPDF(
     doc.setFontSize(12);
     doc.text(`Incidents: ${sortedDayIncidents.length}`, 40, 125);
 
-    // Table columns: Time instead of full Date (since page grouped by day)
-    const tableColumn = ["ID", "Type", "Station", "Status", "Officer", "Time"];
+    // Table columns: removed Staff column to save space
+    const tableColumn = [
+      "ID",
+      "Type",
+      "Station",
+      "Status",
+      "Officer",
+      "Time",
+      "Action Time",
+    ];
 
+    // Build rows: truncate ID for better PDF layout and format action_time/timetaken
     const tableRows = sortedDayIncidents.map((i) => {
+      // Truncate long IDs for better PDF layout (keep full ID in Excel)
+      const rawId = String(i.id ?? i._id ?? "-");
+      const shortId =
+        rawId === "-" || rawId.length <= 18
+          ? rawId
+          : `${rawId.slice(0, 8)}...${rawId.slice(-4)}`;
+
       const d = new Date(i.date ?? i.createdAt ?? "");
       const timeStr =
         !i.date && !i.createdAt
@@ -181,16 +196,44 @@ export async function exportIncidentsAsPDF(
               hour12: true,
             });
 
+      // --- Prefer timetaken (minutes string) and fall back to action_time (legacy) ---
+      const actionTimeRaw = (i as any).timetaken ?? i.action_time ?? "";
+      let actionTimeStr = "-";
+
+      if (actionTimeRaw === null || actionTimeRaw === undefined || actionTimeRaw === "") {
+        actionTimeStr = "-";
+      } else if (/^\s*\d+\s*$/.test(String(actionTimeRaw))) {
+        // numeric minutes like "6"
+        const mins = parseInt(String(actionTimeRaw).trim(), 10);
+        actionTimeStr = `${mins} min`;
+      } else {
+        // try parse as date/time (in case legacy values are timestamps)
+        const ad = new Date(String(actionTimeRaw));
+        if (!Number.isNaN(ad.getTime())) {
+          actionTimeStr = ad.toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          });
+        } else {
+          // fallback to raw string
+          actionTimeStr = String(actionTimeRaw);
+        }
+      }
+
       return [
-        i.id ?? i._id ?? "-",
+        shortId,
         i.type ?? i.issue_type ?? "-",
         i.station ?? "-",
         i.status ?? "-",
         i.officer ?? "-",
         timeStr,
+        actionTimeStr,
       ];
     });
 
+    // Tighter, centered table styling (no Staff column)
     autoTable(doc, {
       startY: 140,
       head: [tableColumn],
@@ -201,23 +244,30 @@ export async function exportIncidentsAsPDF(
         textColor: [255, 255, 255],
         fontStyle: "bold",
         halign: "center",
+        fontSize: 10,
       },
       styles: {
-        fontSize: 10,
-        cellPadding: 6,
+        fontSize: 9, // slightly larger than before for readability
+        cellPadding: 5, // balanced padding
         lineColor: [200, 200, 200],
-        lineWidth: 0.1,
+        lineWidth: 0.08,
+        overflow: "linebreak", // allow wrapping where needed
+        halign: "center",
+        valign: "middle",
       },
       alternateRowStyles: { fillColor: [240, 245, 255] },
       columnStyles: {
-        0: { cellWidth: 70 },
-        1: { cellWidth: 100 },
-        2: { cellWidth: 90 },
-        3: { cellWidth: 70 },
-        4: { cellWidth: 90 },
-        5: { cellWidth: 70 },
+        0: { cellWidth: 72, halign: "left" },  // ID (left-align short id)
+        1: { cellWidth: 80, halign: "center" }, // Type
+        2: { cellWidth: 90, halign: "center" }, // Station
+        3: { cellWidth: 60, halign: "center" }, // Status
+        4: { cellWidth: 80, halign: "center" }, // Officer
+        5: { cellWidth: 70, halign: "center" }, // Time
+        6: { cellWidth: 70, halign: "center" }, // Action Time
       },
-      margin: { left: 40, right: 40 },
+      // Increase left/right margins to visually center the table
+      margin: { left: 55, right: 55 },
+      tableLineWidth: 0,
     });
   }
 
@@ -233,7 +283,11 @@ export async function exportIncidentsAsPDF(
       40,
       doc.internal.pageSize.height - 30
     );
-    doc.text(`Page ${p} of ${pageCount}`, pageWidth - 80, doc.internal.pageSize.height - 30);
+    doc.text(
+      `Page ${p} of ${pageCount}`,
+      pageWidth - 80,
+      doc.internal.pageSize.height - 30
+    );
   }
 
   // === Save PDF ===
@@ -260,6 +314,17 @@ export function exportIncidentsAsExcel(
     Status: i.status ?? "-",
     Officer: i.officer ?? "-",
     Date: formatDate(i.date ?? i.createdAt), // <-- formatted date
+    // Prefer timetaken (minutes) and show "X min", otherwise format as date or show raw fallback
+    "Action Time": (() => {
+      const v = (i as any).timetaken ?? i.action_time ?? "";
+      if (v === null || v === undefined || v === "") return "-";
+      if (/^\s*\d+\s*$/.test(String(v))) return `${parseInt(String(v).trim(), 10)} min`;
+      // try format as date
+      const parsed = new Date(String(v));
+      if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+      return String(v);
+    })(),
+    // Staff removed from Excel output
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(worksheetData);
