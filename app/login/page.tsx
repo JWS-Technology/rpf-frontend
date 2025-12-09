@@ -75,14 +75,14 @@ export default function LoginPage() {
 
         <div className="mb-6">
           <label className="block text-gray-700 mb-1 text-sm font-medium">
-            Phone Number
+            Password
           </label>
           <input
             type="password"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0b2c64] focus:outline-none"
-            placeholder="Enter your phone number"
+            placeholder="Enter your password"
           />
         </div>
 
