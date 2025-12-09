@@ -26,8 +26,11 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
   const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) setUser(JSON.parse(stored));
+    const setState = () => {
+      const stored = localStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
+    }
+    setState()
   }, []);
 
   const stations = ["All Stations", "Srirangam", "Trichy Central Junction"];
@@ -116,8 +119,8 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
                       key={s}
                       onClick={() => handleStationChange(s)}
                       className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-md mx-1 transition ${station === s
-                          ? "bg-blue-100 text-[#0b2c64] font-medium"
-                          : "hover:bg-gray-100"
+                        ? "bg-blue-100 text-[#0b2c64] font-medium"
+                        : "hover:bg-gray-100"
                         }`}
                     >
                       <span>{s}</span>
@@ -132,11 +135,36 @@ export default function TopBar({ onSearch, onStationSelect }: TopBarProps) {
 
         {/* RIGHT — Icons */}
         <div className="flex items-center gap-3 shrink-0">
-          <Bell className="text-gray-600 w-5 h-5 cursor-pointer relative">
+          {/* <Bell className="text-gray-600 w-5 h-5 cursor-pointer relative">
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
               3
             </span>
-          </Bell>
+          </Bell> */}
+          {/* RIGHT — Icons */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="relative">
+              <Bell className="text-gray-600 w-5 h-5 cursor-pointer" />
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                3
+              </span>
+            </div>
+
+            <div className="hidden sm:flex flex-col text-right">
+              <span className="text-sm font-semibold text-[#0b2c64]">
+                {user?.name || "Officer"}
+              </span>
+              <span className="text-xs text-gray-500">
+                {user?.role || "Control Room Operator"}
+              </span>
+            </div>
+
+            <User className="text-gray-700 w-5 h-5 cursor-pointer" />
+            <LogOut
+              className="text-gray-700 w-5 h-5 cursor-pointer"
+              onClick={handleLogout}
+            />
+          </div>
+
 
           <div className="hidden sm:flex flex-col text-right">
             <span className="text-sm font-semibold text-[#0b2c64]">
